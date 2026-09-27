@@ -22,12 +22,12 @@ Legend:
 - [x] T012 Low-stock view
 
 ## Party & purchase
-- [ ] T013 Parties
-- [ ] T014 Party ledger
-- [ ] T015 Supplier advance
-- [ ] T016 Purchases
-- [ ] T017 Purchase payments
-- [ ] T018 Purchase return
+- [x] T013 Parties
+- [x] T014 Party ledger
+- [x] T015 Supplier advance
+- [x] T016 Purchases
+- [x] T017 Purchase payments
+- [x] T018 Purchase return
 
 ## POS
 - [ ] T019 Customers/party integration

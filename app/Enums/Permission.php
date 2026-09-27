@@ -30,6 +30,9 @@ enum Permission: string
     case PurchasesView = 'purchases.view';
     case PurchasesCreate = 'purchases.create';
     case PurchasesVoid = 'purchases.void';
+    case PurchasesReturn = 'purchases.return';
+    case PaymentsCreate = 'payments.create';
+    case LedgerAdjust = 'ledger.adjust';
 
     // Sales & returns
     case SalesView = 'sales.view';
@@ -67,6 +70,9 @@ enum Permission: string
             self::PurchasesView => 'View purchases',
             self::PurchasesCreate => 'Create purchases',
             self::PurchasesVoid => 'Void purchases',
+            self::PurchasesReturn => 'Return purchases to supplier',
+            self::PaymentsCreate => 'Record supplier payments & advances',
+            self::LedgerAdjust => 'Manual party ledger adjustments',
             self::SalesView => 'View sales',
             self::SalesCreate => 'Create sales (POS)',
             self::SalesVoid => 'Void sales',
@@ -86,7 +92,8 @@ enum Permission: string
             self::UsersView, self::UsersCreate, self::UsersUpdate, self::UsersDeactivate,
             self::RolesView, self::RolesManage => 'Administration',
             self::ProductsView, self::ProductsManage, self::InventoryView, self::InventoryAdjust => 'Products & Inventory',
-            self::PartiesView, self::PartiesManage, self::PurchasesView, self::PurchasesCreate, self::PurchasesVoid => 'Parties & Purchasing',
+            self::PartiesView, self::PartiesManage, self::PurchasesView, self::PurchasesCreate, self::PurchasesVoid,
+            self::PurchasesReturn, self::PaymentsCreate, self::LedgerAdjust => 'Parties & Purchasing',
             self::SalesView, self::SalesCreate, self::SalesVoid, self::ReturnsCreate => 'Sales & Returns',
             self::ServiceView, self::ServiceManage => 'Mobile Service',
             self::ExpensesView, self::ExpensesManage => 'Expenses',

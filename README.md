@@ -73,3 +73,19 @@ To run the suite against MySQL, create `mobile_shop_pos_testing` and run
 - `php artisan inventory:reconcile` verifies every balance against `SUM(stock_movements.quantity)`;
   `--fix` rewrites mismatches from the ledger.
 - New products start at zero; record opening stock with a stock adjustment (reason *Opening stock*).
+
+### Party ledger & purchasing rules
+
+- Party balances come from the immutable `party_ledger_entries` table, written only by
+  `App\Domain\PartyLedger\PartyLedgerService`. Debit = the party owes the shop more; credit = the shop
+  owes the party more. Balance > 0 is receivable / supplier advance, balance < 0 is payable.
+- A purchase is recorded in one transaction: items, stock-in movements, the payable (credit), any
+  advance consumed, and the payment made at purchase time (debit). PAID / PARTIAL / DUE is derived.
+- Supplier advances are payments not yet allocated to a purchase (`payment_allocations`); later
+  purchases consume them oldest first. Payments can target one purchase or settle dues oldest first.
+- Purchases, payments and returns are never deleted or edited. Correct mistakes with a purchase return
+  or a permission-gated manual ledger adjustment.
+- Workflows lock the party row before stock rows (always in that order) and retry on deadlock.
+- `php artisan ledger:reconcile [--fix]` verifies cached party balances and payment allocation totals.
+- New permissions (`purchases.return`, `payments.create`, `ledger.adjust`) are added by re-running
+  `php artisan db:seed --class=RolesAndPermissionsSeeder` on existing installs.

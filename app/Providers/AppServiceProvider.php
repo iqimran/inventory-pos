@@ -4,13 +4,18 @@ namespace App\Providers;
 
 use App\Models\Brand;
 use App\Models\Category;
+use App\Models\Party;
+use App\Models\Payment;
 use App\Models\Product;
+use App\Models\Purchase;
+use App\Models\PurchaseReturn;
 use App\Models\Subcategory;
 use App\Models\Unit;
 use App\Models\User;
 use App\Policies\CatalogPolicy;
 use App\Support\Database\BlueprintMacros;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
@@ -42,6 +47,16 @@ class AppServiceProvider extends ServiceProvider
         Password::defaults(fn () => $production
             ? Password::min(10)->letters()->mixedCase()->numbers()
             : Password::min(8));
+
+        // Stable aliases for polymorphic references (ledger, stock movements, allocations),
+        // so stored history does not depend on PHP class names.
+        Relation::morphMap([
+            'party' => Party::class,
+            'payment' => Payment::class,
+            'product' => Product::class,
+            'purchase' => Purchase::class,
+            'purchase_return' => PurchaseReturn::class,
+        ]);
 
         foreach ([Category::class, Subcategory::class, Brand::class, Unit::class, Product::class] as $model) {
             Gate::policy($model, CatalogPolicy::class);

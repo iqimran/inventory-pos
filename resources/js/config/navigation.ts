@@ -1,5 +1,21 @@
 import { type NavGroup } from '@/types';
-import { ArrowLeftRight, Boxes, ClipboardList, FolderTree, LayoutGrid, Package, Ruler, ShieldCheck, Tag, TriangleAlert, Users } from 'lucide-react';
+import {
+    ArrowLeftRight,
+    Banknote,
+    Boxes,
+    ClipboardList,
+    Contact,
+    FolderTree,
+    LayoutGrid,
+    Package,
+    Ruler,
+    ShieldCheck,
+    ShoppingCart,
+    Tag,
+    TriangleAlert,
+    Undo2,
+    Users,
+} from 'lucide-react';
 
 /**
  * Application navigation. Items are hidden when the user lacks `permission`.
@@ -26,6 +42,15 @@ export const navigation: NavGroup[] = [
             { title: 'Low stock', url: '/inventory/low-stock', icon: TriangleAlert, permission: 'inventory.view' },
             { title: 'Stock adjustments', url: '/inventory/adjustments', icon: ClipboardList, permission: 'inventory.view' },
             { title: 'Stock movements', url: '/inventory/movements', icon: ArrowLeftRight, permission: 'inventory.view' },
+        ],
+    },
+    {
+        title: 'Purchasing',
+        items: [
+            { title: 'Parties', url: '/parties', icon: Contact, permission: 'parties.view' },
+            { title: 'Purchases', url: '/purchases', icon: ShoppingCart, permission: 'purchases.view' },
+            { title: 'Purchase returns', url: '/purchase-returns', icon: Undo2, permission: 'purchases.view' },
+            { title: 'Supplier payments', url: '/supplier-payments', icon: Banknote, permission: 'purchases.view' },
         ],
     },
     {
