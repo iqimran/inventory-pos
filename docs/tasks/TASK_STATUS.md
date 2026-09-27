@@ -13,13 +13,13 @@ Legend:
 - [x] T005 Shared UI/layout/navigation
 
 ## Product & inventory
-- [ ] T006 Categories/subcategories
-- [ ] T007 Brands/units
-- [ ] T008 Products
-- [ ] T009 Stock movements
-- [ ] T010 Product search
-- [ ] T011 Stock adjustment
-- [ ] T012 Low-stock view
+- [x] T006 Categories/subcategories
+- [x] T007 Brands/units
+- [x] T008 Products
+- [x] T009 Stock movements
+- [x] T010 Product search
+- [x] T011 Stock adjustment
+- [x] T012 Low-stock view
 
 ## Party & purchase
 - [ ] T013 Parties

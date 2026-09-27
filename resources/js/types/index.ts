@@ -53,6 +53,21 @@ export interface PaginationLink {
     active: boolean;
 }
 
+/** Page metadata shared by Laravel paginators and API resource collections. */
+export interface PageMeta {
+    from: number | null;
+    to: number | null;
+    total: number;
+    last_page: number;
+    links: PaginationLink[];
+}
+
+/** A plain Laravel LengthAwarePaginator serialised by Inertia. */
+export interface Paginator<T> extends PageMeta {
+    data: T[];
+    current_page: number;
+}
+
 export interface Paginated<T> {
     data: T[];
     links: { first: string | null; last: string | null; prev: string | null; next: string | null };
@@ -70,4 +85,9 @@ export interface Paginated<T> {
 export interface PermissionGroup {
     group: string;
     permissions: { name: string; label: string }[];
+}
+
+export interface Option {
+    id: number;
+    name: string;
 }

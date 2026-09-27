@@ -2,7 +2,13 @@
 
 namespace App\Providers;
 
+use App\Models\Brand;
+use App\Models\Category;
+use App\Models\Product;
+use App\Models\Subcategory;
+use App\Models\Unit;
 use App\Models\User;
+use App\Policies\CatalogPolicy;
 use App\Support\Database\BlueprintMacros;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -36,6 +42,10 @@ class AppServiceProvider extends ServiceProvider
         Password::defaults(fn () => $production
             ? Password::min(10)->letters()->mixedCase()->numbers()
             : Password::min(8));
+
+        foreach ([Category::class, Subcategory::class, Brand::class, Unit::class, Product::class] as $model) {
+            Gate::policy($model, CatalogPolicy::class);
+        }
 
         // Admin has full access to every ability.
         Gate::before(fn (User $user) => $user->isAdmin() ? true : null);

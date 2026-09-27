@@ -1,8 +1,8 @@
 import { cn } from '@/lib/utils';
-import { type Paginated } from '@/types';
+import { type PageMeta } from '@/types';
 import { Link } from '@inertiajs/react';
 
-export function Pagination({ meta }: { meta: Paginated<unknown>['meta'] }) {
+export function Pagination({ meta }: { meta: PageMeta }) {
     if (meta.last_page <= 1) {
         return null;
     }

@@ -62,3 +62,14 @@ To run the suite against MySQL, create `mobile_shop_pos_testing` and run
 - Audit columns: use `$table->userstamps()` in migrations and the `HasUserstamps` model trait.
 - Frontend: pages in `resources/js/pages`, module UI in `resources/js/features/<module>`,
   sidebar entries in `resources/js/config/navigation.ts` (each with its required `permission`).
+
+### Inventory rules
+
+- Stock is never edited directly. `App\Domain\Inventory\StockService` is the only writer: every change
+  appends an immutable `stock_movements` row (signed quantity: `+` in, `−` out; the sign comes from the
+  movement type) and updates the `product_stocks` running balance in the same row-locked transaction.
+- Mistakes are corrected with a compensating movement (e.g. a reverse adjustment), never by editing history.
+- Stock cannot go negative unless `INVENTORY_ALLOW_NEGATIVE_STOCK=true`.
+- `php artisan inventory:reconcile` verifies every balance against `SUM(stock_movements.quantity)`;
+  `--fix` rewrites mismatches from the ledger.
+- New products start at zero; record opening stock with a stock adjustment (reason *Opening stock*).
