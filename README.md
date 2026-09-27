@@ -103,3 +103,18 @@ To run the suite against MySQL, create `mobile_shop_pos_testing` and run
 - Customer dues are collected against one sale or on account (oldest first) with `sales.collect`.
 - Shop details on receipts come from `SHOP_NAME`, `SHOP_ADDRESS`, `SHOP_PHONE`, `SHOP_RECEIPT_FOOTER`.
 - POS shortcuts: F2 scan, F4 paid, F8 exact amount, F9 complete sale, Esc close results.
+
+### Sale return rules
+
+- A return references the original sale and its lines. Quantities still returnable are derived from
+  earlier return lines (counted under a lock on the sale), so excess and duplicate returns are blocked
+  even under concurrent requests. The original sale's lines, prices and totals are never modified;
+  only its derived settlement fields (`returned_amount`, `due_amount`, `payment_status`) are recomputed.
+- Lines are valued at what the customer actually paid (after line and invoice discounts); returning
+  everything that remains takes the exact remaining value.
+- Returned goods re-enter stock (`SALE_RETURN_IN`) at the original sale's cost snapshot.
+- Money: the ledger is credited with the return value (`SALE_RETURN`). It first reduces what is still
+  due on the sale (`adjustment_amount`); the already-paid part is refunded in cash (`CUSTOMER_REFUND`
+  payment + ledger debit, capped at what the shop actually owes the customer) and/or kept as store credit
+  (`credit_amount`). Walk-in returns are always refunded in full.
+- Requires the `returns.create` permission.

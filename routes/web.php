@@ -18,6 +18,7 @@ use App\Http\Controllers\Purchasing\SupplierPaymentController;
 use App\Http\Controllers\Sales\CustomerPaymentController;
 use App\Http\Controllers\Sales\PosController;
 use App\Http\Controllers\Sales\SaleController;
+use App\Http\Controllers\Sales\SaleReturnController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -78,11 +79,15 @@ Route::middleware(['auth'])->group(function () {
         Route::post('customers', [PosController::class, 'storeCustomer'])->name('customers.store');
     });
 
-    // Sales are immutable once completed: no edit/delete (returns arrive in T024).
+    // Sales are immutable once completed: no edit/delete. Corrections go through sale returns.
     Route::get('sales', [SaleController::class, 'index'])->name('sales.index');
     Route::post('sales', [SaleController::class, 'store'])->name('sales.store');
     Route::get('sales/{sale}', [SaleController::class, 'show'])->name('sales.show');
     Route::get('sales/{sale}/receipt', [SaleController::class, 'receipt'])->name('sales.receipt');
+    Route::get('sales/{sale}/returns/create', [SaleReturnController::class, 'create'])->name('sales.returns.create');
+    Route::post('sales/{sale}/returns', [SaleReturnController::class, 'store'])->name('sales.returns.store');
+    Route::get('sale-returns', [SaleReturnController::class, 'index'])->name('sale-returns.index');
+    Route::get('sale-returns/{saleReturn}', [SaleReturnController::class, 'show'])->name('sale-returns.show');
 
     Route::get('customer-payments', [CustomerPaymentController::class, 'index'])->name('customer-payments.index');
     Route::get('customer-payments/create', [CustomerPaymentController::class, 'create'])->name('customer-payments.create');

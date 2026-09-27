@@ -31,6 +31,7 @@ class SaleResource extends JsonResource
             'discount' => $this->discount,
             'total' => $this->total,
             'paid_amount' => $this->paid_amount,
+            'returned_amount' => $this->returned_amount,
             'due_amount' => $this->due_amount,
             'payment_status' => $this->payment_status->value,
             'payment_status_label' => $this->payment_status->label(),
@@ -54,8 +55,20 @@ class SaleResource extends JsonResource
                 'line_discount' => $item->line_discount,
                 'discount_share' => $item->discount_share,
                 'line_total' => $item->line_total,
+                // Present when loaded with withSum('returnItems as returned_quantity', ...).
+                'returned_quantity' => (int) ($item->getAttributes()['returned_quantity'] ?? 0),
+                'returnable_quantity' => $item->quantity - (int) ($item->getAttributes()['returned_quantity'] ?? 0),
             ], $showCost ? ['unit_cost' => $item->unit_cost] : []))),
             'cost_total' => $this->when($showCost, $this->cost_total),
+            'returns' => $this->whenLoaded('returns', fn () => $this->returns->map(fn ($return) => [
+                'id' => $return->id,
+                'return_no' => $return->return_no,
+                'returned_at' => $return->returned_at->toIso8601String(),
+                'subtotal' => $return->subtotal,
+                'refund_amount' => $return->refund_amount,
+                'credit_amount' => $return->credit_amount,
+                'reason' => $return->reason,
+            ])),
             'allocations' => $this->whenLoaded('allocations', fn () => $this->allocations->map(fn ($allocation) => [
                 'id' => $allocation->id,
                 'amount' => $allocation->amount,

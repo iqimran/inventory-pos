@@ -19,8 +19,9 @@ class ReconcileLedger extends Command
 
         $parties = DB::table('parties')
             ->leftJoinSub($ledger, 'ledger', 'ledger.party_id', '=', 'parties.id')
-            ->whereRaw('COALESCE(ledger.ledger_balance, 0) <> parties.balance')
-            ->get(['parties.id', 'parties.name', 'parties.balance', DB::raw('COALESCE(ledger.ledger_balance, 0) as ledger_balance')]);
+            // Compare at cent precision (SQLite sums decimals as floating point).
+            ->whereRaw('ROUND(COALESCE(ledger.ledger_balance, 0), 2) <> ROUND(parties.balance, 2)')
+            ->get(['parties.id', 'parties.name', 'parties.balance', DB::raw('ROUND(COALESCE(ledger.ledger_balance, 0), 2) as ledger_balance')]);
 
         $allocations = DB::table('payment_allocations')
             ->select('payment_id', DB::raw('SUM(amount) as allocated'))
@@ -28,8 +29,8 @@ class ReconcileLedger extends Command
 
         $payments = DB::table('payments')
             ->leftJoinSub($allocations, 'alloc', 'alloc.payment_id', '=', 'payments.id')
-            ->where(fn ($q) => $q->whereRaw('COALESCE(alloc.allocated, 0) <> payments.allocated_amount')->orWhereRaw('payments.allocated_amount > payments.amount'))
-            ->get(['payments.id', 'payments.payment_no', 'payments.allocated_amount', DB::raw('COALESCE(alloc.allocated, 0) as allocated')]);
+            ->where(fn ($q) => $q->whereRaw('ROUND(COALESCE(alloc.allocated, 0), 2) <> ROUND(payments.allocated_amount, 2)')->orWhereRaw('payments.allocated_amount > payments.amount'))
+            ->get(['payments.id', 'payments.payment_no', 'payments.allocated_amount', DB::raw('ROUND(COALESCE(alloc.allocated, 0), 2) as allocated')]);
 
         if ($parties->isEmpty() && $payments->isEmpty()) {
             $this->components->info('All party balances and payment allocations match their records.');

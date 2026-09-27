@@ -34,6 +34,7 @@ export const navigation: NavGroup[] = [
         items: [
             { title: 'Point of sale', url: '/pos', icon: ScanBarcode, permission: 'sales.create' },
             { title: 'Sales', url: '/sales', icon: Receipt, permission: 'sales.view' },
+            { title: 'Sale returns', url: '/sale-returns', icon: Undo2, permission: 'sales.view' },
             { title: 'Customer payments', url: '/customer-payments', icon: CreditCard, permission: 'sales.view' },
         ],
     },

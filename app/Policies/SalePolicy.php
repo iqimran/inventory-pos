@@ -28,6 +28,11 @@ class SalePolicy
         return $user->can(Permission::SalesPriceOverride->value);
     }
 
+    public function return(User $user, Sale $sale): bool
+    {
+        return $user->can(Permission::ReturnsCreate->value);
+    }
+
     public function collect(User $user): bool
     {
         return $user->can(Permission::SalesCollect->value);

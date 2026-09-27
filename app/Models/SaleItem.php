@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SaleItem extends Model
 {
@@ -36,6 +37,17 @@ class SaleItem extends Model
             'unit_cost' => 'decimal:2',
             'cost_total' => 'decimal:2',
         ];
+    }
+
+    /**
+     * Return lines against this sale line. Returned quantities are derived from these,
+     * so the original sale line itself is never modified.
+     *
+     * @return HasMany<SaleReturnItem, $this>
+     */
+    public function returnItems(): HasMany
+    {
+        return $this->hasMany(SaleReturnItem::class);
     }
 
     /**

@@ -16,6 +16,7 @@ enum LedgerEntryType: string
     case Sale = 'SALE';
     case CustomerPayment = 'CUSTOMER_PAYMENT';
     case SaleReturn = 'SALE_RETURN';
+    case CustomerRefund = 'CUSTOMER_REFUND';
     case ManualAdjustment = 'MANUAL_ADJUSTMENT';
 
     public function label(): string
@@ -30,6 +31,7 @@ enum LedgerEntryType: string
             self::Sale => 'Sale (receivable)',
             self::CustomerPayment => 'Payment from customer',
             self::SaleReturn => 'Sale return',
+            self::CustomerRefund => 'Refund to customer',
             self::ManualAdjustment => 'Manual adjustment',
         };
     }

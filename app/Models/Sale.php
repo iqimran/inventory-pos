@@ -32,6 +32,7 @@ class Sale extends Model
         'discount',
         'total',
         'paid_amount',
+        'returned_amount',
         'due_amount',
         'payment_status',
         'payment_method',
@@ -54,6 +55,7 @@ class Sale extends Model
             'discount' => 'decimal:2',
             'total' => 'decimal:2',
             'paid_amount' => 'decimal:2',
+            'returned_amount' => 'decimal:2',
             'due_amount' => 'decimal:2',
             'tendered_amount' => 'decimal:2',
             'change_amount' => 'decimal:2',
@@ -80,6 +82,14 @@ class Sale extends Model
     public function items(): HasMany
     {
         return $this->hasMany(SaleItem::class);
+    }
+
+    /**
+     * @return HasMany<SaleReturn, $this>
+     */
+    public function returns(): HasMany
+    {
+        return $this->hasMany(SaleReturn::class);
     }
 
     /**

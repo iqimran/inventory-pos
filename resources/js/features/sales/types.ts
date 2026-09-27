@@ -29,6 +29,25 @@ export interface SaleItem {
     discount_share: string;
     line_total: string;
     unit_cost?: string;
+    returned_quantity: number;
+    returnable_quantity: number;
+}
+
+export interface SaleReturn {
+    id: number;
+    return_no: string;
+    status: string;
+    returned_at: string;
+    subtotal: string;
+    adjustment_amount: string;
+    refund_amount: string;
+    credit_amount: string;
+    refund_method_label: string | null;
+    reason: string;
+    sale?: { id: number; invoice_no: string };
+    party?: { id: number; name: string; phone: string | null } | null;
+    items?: { id: number; product: { name: string; sku: string } | null; quantity: number; unit_price: string; amount: string; unit_cost?: string }[];
+    created_by?: string | null;
 }
 
 export interface Sale {
@@ -43,6 +62,7 @@ export interface Sale {
     discount: string;
     total: string;
     paid_amount: string;
+    returned_amount: string;
     due_amount: string;
     payment_status: 'PAID' | 'PARTIAL' | 'DUE';
     payment_status_label: string;
@@ -54,6 +74,15 @@ export interface Sale {
     party?: { id: number; name: string; phone: string | null; address: string | null } | null;
     items?: SaleItem[];
     cost_total?: string;
+    returns?: {
+        id: number;
+        return_no: string;
+        returned_at: string;
+        subtotal: string;
+        refund_amount: string;
+        credit_amount: string;
+        reason: string;
+    }[];
     allocations?: { id: number; amount: string; payment: { id: number; payment_no: string; method_label: string; paid_at: string } }[];
     created_by?: string | null;
 }

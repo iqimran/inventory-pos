@@ -42,6 +42,11 @@ export default function ShowSale({ sale: { data: sale } }: { sale: { data: Sale 
                         <Button asChild>
                             <Link href={route('sales.receipt', sale.id)}>Receipt</Link>
                         </Button>
+                        {can('returns.create') && sale.items?.some((item) => item.returnable_quantity > 0) && (
+                            <Button variant="outline" asChild>
+                                <Link href={route('sales.returns.create', sale.id)}>Return items</Link>
+                            </Button>
+                        )}
                         {can('sales.collect') && toCents(sale.due_amount) > 0 && sale.party && (
                             <Button variant="secondary" asChild>
                                 <Link href={route('customer-payments.create', { party_id: sale.party.id, sale_id: sale.id })}>Collect due</Link>
@@ -60,6 +65,7 @@ export default function ShowSale({ sale: { data: sale } }: { sale: { data: Sale 
                                     <th className="px-4 py-3 text-right font-medium">Price</th>
                                     <th className="px-4 py-3 text-right font-medium">Discount</th>
                                     <th className="px-4 py-3 text-right font-medium">Total</th>
+                                    <th className="px-4 py-3 text-right font-medium">Returned</th>
                                     {sale.cost_total !== undefined && <th className="px-4 py-3 text-right font-medium">Unit cost</th>}
                                 </tr>
                             </thead>
@@ -83,6 +89,7 @@ export default function ShowSale({ sale: { data: sale } }: { sale: { data: Sale 
                                                 : '—'}
                                         </td>
                                         <td className="px-4 py-3 text-right tabular-nums">{formatMoney(item.line_total)}</td>
+                                        <td className="px-4 py-3 text-right tabular-nums">{item.returned_quantity || '—'}</td>
                                         {sale.cost_total !== undefined && (
                                             <td className="text-muted-foreground px-4 py-3 text-right tabular-nums">{formatMoney(item.unit_cost)}</td>
                                         )}
@@ -123,6 +130,24 @@ export default function ShowSale({ sale: { data: sale } }: { sale: { data: Sale 
                                 ))}
                             </ul>
                         </div>
+                        {sale.returns && sale.returns.length > 0 && (
+                            <div className="rounded-lg border">
+                                <h3 className="border-b px-4 py-2 text-sm font-medium">Returns</h3>
+                                <ul className="divide-y text-sm">
+                                    {sale.returns.map((saleReturn) => (
+                                        <li key={saleReturn.id} className="flex justify-between gap-2 px-4 py-2">
+                                            <span>
+                                                <Link href={route('sale-returns.show', saleReturn.id)} className="font-mono hover:underline">
+                                                    {saleReturn.return_no}
+                                                </Link>
+                                                <span className="text-muted-foreground ml-2 text-xs">{saleReturn.reason}</span>
+                                            </span>
+                                            <span className="tabular-nums">−{formatMoney(saleReturn.subtotal)}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
                         {sale.notes && <p className="text-muted-foreground text-sm">Note: {sale.notes}</p>}
                     </div>
                 </div>

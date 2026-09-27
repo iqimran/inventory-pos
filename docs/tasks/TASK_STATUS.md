@@ -35,7 +35,7 @@ Legend:
 - [x] T021 Wholesale POS
 - [x] T022 Sale payment/due
 - [x] T023 Sale receipt
-- [ ] T024 Sale return
+- [x] T024 Sale return
 
 ## Mobile service
 - [ ] T025 Customer/device

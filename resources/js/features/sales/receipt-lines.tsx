@@ -13,6 +13,7 @@ export function SaleTotals({ sale }: { sale: Sale }) {
     rows.push([`Paid${sale.payment_method_label ? ` (${sale.payment_method_label})` : ''}`, formatMoney(sale.paid_amount)]);
     if (sale.tendered_amount) rows.push(['Cash tendered', formatMoney(sale.tendered_amount)]);
     if (toCents(sale.change_amount) > 0) rows.push(['Change', formatMoney(sale.change_amount)]);
+    if (toCents(sale.returned_amount) > 0) rows.push(['Returned', `−${formatMoney(sale.returned_amount)}`]);
     rows.push(['Due', formatMoney(sale.due_amount), true]);
 
     return (

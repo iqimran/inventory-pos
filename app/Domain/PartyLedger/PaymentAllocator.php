@@ -3,6 +3,7 @@
 namespace App\Domain\PartyLedger;
 
 use App\Enums\PaymentDirection;
+use App\Enums\PaymentPurpose;
 use App\Models\Party;
 use App\Models\Payment;
 use App\Models\PaymentAllocation;
@@ -19,6 +20,11 @@ use Illuminate\Support\Facades\Auth;
  */
 class PaymentAllocator
 {
+    /**
+     * Only money paid to a supplier can be held as an advance (not, e.g., customer refunds).
+     */
+    private const ADVANCE_PURPOSES = [PaymentPurpose::PurchasePayment, PaymentPurpose::SupplierAdvance];
+
     public function allocate(Payment $payment, Model $allocatable, string $amount): PaymentAllocation
     {
         $allocation = PaymentAllocation::create([
@@ -49,6 +55,7 @@ class PaymentAllocator
         $unallocated = Payment::query()
             ->where('party_id', $party->id)
             ->where('direction', PaymentDirection::Out)
+            ->whereIn('purpose', self::ADVANCE_PURPOSES)
             ->selectRaw('COALESCE(SUM(amount - allocated_amount), 0) as unallocated')
             ->value('unallocated');
 
@@ -98,6 +105,7 @@ class PaymentAllocator
         return Payment::query()
             ->where('party_id', $party->id)
             ->where('direction', PaymentDirection::Out)
+            ->whereIn('purpose', self::ADVANCE_PURPOSES)
             ->whereColumn('allocated_amount', '<', 'amount')
             ->orderBy('paid_at')
             ->orderBy('id')
