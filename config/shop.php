@@ -4,6 +4,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Shop Details
+    |--------------------------------------------------------------------------
+    |
+    | Printed on customer receipts.
+    |
+    */
+
+    'name' => env('SHOP_NAME', env('APP_NAME', 'Mobile Shop')),
+    'address' => env('SHOP_ADDRESS'),
+    'phone' => env('SHOP_PHONE'),
+    'receipt_footer' => env('SHOP_RECEIPT_FOOTER', 'Thank you for shopping with us.'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Initial Administrator
     |--------------------------------------------------------------------------
     |

@@ -9,6 +9,7 @@ use App\Models\Payment;
 use App\Models\Product;
 use App\Models\Purchase;
 use App\Models\PurchaseReturn;
+use App\Models\Sale;
 use App\Models\Subcategory;
 use App\Models\Unit;
 use App\Models\User;
@@ -56,6 +57,7 @@ class AppServiceProvider extends ServiceProvider
             'product' => Product::class,
             'purchase' => Purchase::class,
             'purchase_return' => PurchaseReturn::class,
+            'sale' => Sale::class,
         ]);
 
         foreach ([Category::class, Subcategory::class, Brand::class, Unit::class, Product::class] as $model) {

@@ -89,3 +89,17 @@ To run the suite against MySQL, create `mobile_shop_pos_testing` and run
 - `php artisan ledger:reconcile [--fix]` verifies cached party balances and payment allocation totals.
 - New permissions (`purchases.return`, `payments.create`, `ledger.adjust`) are added by re-running
   `php artisan db:seed --class=RolesAndPermissionsSeeder` on existing installs.
+
+### POS & sales rules
+
+- A sale is recorded in one transaction: invoice (`SALE-YYYYMM-000001`, row-locked sequence),
+  stock-out movements, customer ledger (debit sale total, credit amount paid), and the payment.
+- Prices always come from the product (retail or wholesale). Charging another price needs the
+  `sales.price_override` permission; line and invoice discounts are capped at the amounts they discount.
+- Walk-in sales must be paid in full; a due requires a customer (party of type CUSTOMER or BOTH).
+- Cost snapshot: `product_stocks.average_cost` is a moving weighted average maintained by `StockService`
+  on costed stock-in. It is stamped onto every stock-out movement and each sale item (`unit_cost`,
+  `cost_total`) at sale time, so later purchases or price edits never change historical profit.
+- Customer dues are collected against one sale or on account (oldest first) with `sales.collect`.
+- Shop details on receipts come from `SHOP_NAME`, `SHOP_ADDRESS`, `SHOP_PHONE`, `SHOP_RECEIPT_FOOTER`.
+- POS shortcuts: F2 scan, F4 paid, F8 exact amount, F9 complete sale, Esc close results.

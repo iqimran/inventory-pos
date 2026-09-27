@@ -29,6 +29,11 @@ class PartyRequest extends FormRequest
             }
         }
 
+        // Phones are stored as digits only so lookups (e.g. POS customer search) match however they were typed.
+        if (is_string($this->input('phone'))) {
+            $clean['phone'] = preg_replace('/\D+/', '', $this->input('phone')) ?: null;
+        }
+
         $this->merge($clean);
     }
 
@@ -42,7 +47,7 @@ class PartyRequest extends FormRequest
         $rules = [
             'name' => ['required', 'string', 'max:150'],
             'type' => ['required', Rule::enum(PartyType::class)],
-            'phone' => ['nullable', 'string', 'max:30', 'regex:/^[0-9+\-\s()]+$/'],
+            'phone' => ['nullable', 'string', 'min:6', 'max:20'],
             'email' => ['nullable', 'email', 'max:150'],
             'address' => ['nullable', 'string', 'max:500'],
             'notes' => ['nullable', 'string', 'max:1000'],

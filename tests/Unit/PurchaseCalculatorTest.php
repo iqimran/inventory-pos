@@ -19,9 +19,19 @@ class PurchaseCalculatorTest extends TestCase
 
         $this->assertSame('300.00', $totals['subtotal']);
         $this->assertSame('290.00', $totals['total']);
-        // 3.33 + 3.33 + 3.34: the last line absorbs rounding so shares sum to the discount.
-        $this->assertSame(['3.33', '3.33', '3.34'], array_column($totals['lines'], 'discount_share'));
+        // Largest remainder: shares sum exactly to the discount.
+        $this->assertSame(['3.34', '3.33', '3.33'], array_column($totals['lines'], 'discount_share'));
         $this->assertSame('290.00', bcadd(bcadd($totals['lines'][0]['line_total'], $totals['lines'][1]['line_total'], 2), $totals['lines'][2]['line_total'], 2));
+    }
+
+    public function test_small_discount_never_produces_a_negative_share()
+    {
+        // Regression: naive per-line rounding gave 0.01 + 0.01 + 0.01 + (-0.01).
+        $totals = (new PurchaseCalculator)->totals(array_fill(0, 4, ['quantity' => 1, 'unit_cost' => '1.00']), '0.02');
+
+        $shares = array_column($totals['lines'], 'discount_share');
+        $this->assertSame(['0.01', '0.01', '0.00', '0.00'], $shares);
+        $this->assertSame('3.98', $totals['total']);
     }
 
     public function test_discount_cannot_exceed_subtotal()

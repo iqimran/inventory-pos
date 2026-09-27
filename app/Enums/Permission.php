@@ -38,6 +38,8 @@ enum Permission: string
     case SalesView = 'sales.view';
     case SalesCreate = 'sales.create';
     case SalesVoid = 'sales.void';
+    case SalesPriceOverride = 'sales.price_override';
+    case SalesCollect = 'sales.collect';
     case ReturnsCreate = 'returns.create';
 
     // Mobile service
@@ -76,6 +78,8 @@ enum Permission: string
             self::SalesView => 'View sales',
             self::SalesCreate => 'Create sales (POS)',
             self::SalesVoid => 'Void sales',
+            self::SalesPriceOverride => 'Override sale prices',
+            self::SalesCollect => 'Collect customer dues',
             self::ReturnsCreate => 'Process returns',
             self::ServiceView => 'View service jobs',
             self::ServiceManage => 'Manage service jobs',
@@ -94,7 +98,8 @@ enum Permission: string
             self::ProductsView, self::ProductsManage, self::InventoryView, self::InventoryAdjust => 'Products & Inventory',
             self::PartiesView, self::PartiesManage, self::PurchasesView, self::PurchasesCreate, self::PurchasesVoid,
             self::PurchasesReturn, self::PaymentsCreate, self::LedgerAdjust => 'Parties & Purchasing',
-            self::SalesView, self::SalesCreate, self::SalesVoid, self::ReturnsCreate => 'Sales & Returns',
+            self::SalesView, self::SalesCreate, self::SalesVoid, self::SalesPriceOverride, self::SalesCollect,
+            self::ReturnsCreate => 'Sales & Returns',
             self::ServiceView, self::ServiceManage => 'Mobile Service',
             self::ExpensesView, self::ExpensesManage => 'Expenses',
             self::BarcodesPrint, self::ReportsView => 'Barcode & Reports',
@@ -114,6 +119,7 @@ enum Permission: string
             self::PartiesView,
             self::SalesView,
             self::SalesCreate,
+            self::SalesCollect,
             self::ServiceView,
             self::ServiceManage,
         ];

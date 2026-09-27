@@ -5,10 +5,13 @@ import {
     Boxes,
     ClipboardList,
     Contact,
+    CreditCard,
     FolderTree,
     LayoutGrid,
     Package,
+    Receipt,
     Ruler,
+    ScanBarcode,
     ShieldCheck,
     ShoppingCart,
     Tag,
@@ -25,6 +28,14 @@ export const navigation: NavGroup[] = [
     {
         title: 'Overview',
         items: [{ title: 'Dashboard', url: '/dashboard', icon: LayoutGrid }],
+    },
+    {
+        title: 'Sales',
+        items: [
+            { title: 'Point of sale', url: '/pos', icon: ScanBarcode, permission: 'sales.create' },
+            { title: 'Sales', url: '/sales', icon: Receipt, permission: 'sales.view' },
+            { title: 'Customer payments', url: '/customer-payments', icon: CreditCard, permission: 'sales.view' },
+        ],
     },
     {
         title: 'Catalog',

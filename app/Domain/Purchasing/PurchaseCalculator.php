@@ -13,7 +13,7 @@ class PurchaseCalculator
 {
     /**
      * Totals for purchase lines, spreading the header discount across lines in proportion to
-     * their value (largest-remainder safe: the last line absorbs rounding so shares sum exactly).
+     * their value (largest-remainder method, so shares sum exactly and are never negative).
      *
      * @param  list<array{quantity: int, unit_cost: string}>  $lines
      * @return array{subtotal: string, discount: string, total: string, lines: list<array{line_subtotal: string, discount_share: string, line_total: string}>}
@@ -28,20 +28,14 @@ class PurchaseCalculator
             throw new InvalidArgumentException('Discount must be between zero and the subtotal.');
         }
 
+        $shares = Money::allocate($discount, $lineSubtotals);
         $computed = [];
-        $allocated = '0.00';
-        $last = count($lineSubtotals) - 1;
 
         foreach ($lineSubtotals as $index => $lineSubtotal) {
-            $share = $index === $last
-                ? Money::sub($discount, $allocated)
-                : Money::proportion($discount, $lineSubtotal, $subtotal);
-            $allocated = Money::add($allocated, $share);
-
             $computed[] = [
                 'line_subtotal' => $lineSubtotal,
-                'discount_share' => $share,
-                'line_total' => Money::sub($lineSubtotal, $share),
+                'discount_share' => $shares[$index],
+                'line_total' => Money::sub($lineSubtotal, $shares[$index]),
             ];
         }
 

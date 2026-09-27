@@ -20,7 +20,7 @@ class ProductStock extends Model
 
     protected function casts(): array
     {
-        return ['quantity' => 'integer'];
+        return ['quantity' => 'integer', 'average_cost' => 'decimal:2'];
     }
 
     /**

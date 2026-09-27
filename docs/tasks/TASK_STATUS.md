@@ -30,11 +30,11 @@ Legend:
 - [x] T018 Purchase return
 
 ## POS
-- [ ] T019 Customers/party integration
-- [ ] T020 Retail POS
-- [ ] T021 Wholesale POS
-- [ ] T022 Sale payment/due
-- [ ] T023 Sale receipt
+- [x] T019 Customers/party integration
+- [x] T020 Retail POS
+- [x] T021 Wholesale POS
+- [x] T022 Sale payment/due
+- [x] T023 Sale receipt
 - [ ] T024 Sale return
 
 ## Mobile service

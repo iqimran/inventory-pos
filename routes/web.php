@@ -15,6 +15,9 @@ use App\Http\Controllers\Parties\PartyLedgerAdjustmentController;
 use App\Http\Controllers\Purchasing\PurchaseController;
 use App\Http\Controllers\Purchasing\PurchaseReturnController;
 use App\Http\Controllers\Purchasing\SupplierPaymentController;
+use App\Http\Controllers\Sales\CustomerPaymentController;
+use App\Http\Controllers\Sales\PosController;
+use App\Http\Controllers\Sales\SaleController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -65,6 +68,26 @@ Route::middleware(['auth'])->group(function () {
     Route::post('supplier-payments', [SupplierPaymentController::class, 'storePayment'])->name('supplier-payments.store');
     Route::post('supplier-advances', [SupplierPaymentController::class, 'storeAdvance'])->name('supplier-advances.store');
     Route::get('supplier-payments/{payment}', [SupplierPaymentController::class, 'show'])->name('supplier-payments.show');
+
+    // POS counter and its JSON lookups (session-authenticated, used while scanning).
+    Route::prefix('pos')->name('pos.')->group(function () {
+        Route::get('/', [PosController::class, 'index'])->name('index');
+        Route::get('products', [PosController::class, 'products'])->name('products');
+        Route::get('products/lookup/{code}', [PosController::class, 'lookup'])->where('code', '[A-Za-z0-9\-._\/]+')->name('products.lookup');
+        Route::get('customers', [PosController::class, 'customers'])->name('customers');
+        Route::post('customers', [PosController::class, 'storeCustomer'])->name('customers.store');
+    });
+
+    // Sales are immutable once completed: no edit/delete (returns arrive in T024).
+    Route::get('sales', [SaleController::class, 'index'])->name('sales.index');
+    Route::post('sales', [SaleController::class, 'store'])->name('sales.store');
+    Route::get('sales/{sale}', [SaleController::class, 'show'])->name('sales.show');
+    Route::get('sales/{sale}/receipt', [SaleController::class, 'receipt'])->name('sales.receipt');
+
+    Route::get('customer-payments', [CustomerPaymentController::class, 'index'])->name('customer-payments.index');
+    Route::get('customer-payments/create', [CustomerPaymentController::class, 'create'])->name('customer-payments.create');
+    Route::post('customer-payments', [CustomerPaymentController::class, 'store'])->name('customer-payments.store');
+    Route::get('customer-payments/{payment}', [CustomerPaymentController::class, 'show'])->name('customer-payments.show');
 });
 
 require __DIR__.'/settings.php';

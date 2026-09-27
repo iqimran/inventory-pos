@@ -57,6 +57,52 @@ final class Money
         return self::round(bcdiv(bcmul($amount, (string) $numerator, 8), (string) $denominator, 8));
     }
 
+    /**
+     * Split $amount across $weights in proportion, exactly (largest-remainder method on cents).
+     * Shares always sum to $amount, are never negative, and never exceed their weight when
+     * $amount <= SUM($weights).
+     *
+     * @param  list<string>  $weights  non-negative money amounts
+     * @return list<string>
+     */
+    public static function allocate(string $amount, array $weights): array
+    {
+        $amountCents = bcmul(self::of($amount), '100', 0);
+        $weightCents = array_map(fn (string $w) => bcmul(self::of($w), '100', 0), $weights);
+        $totalWeight = array_reduce($weightCents, fn (string $carry, string $w) => bcadd($carry, $w, 0), '0');
+
+        if ($weights === [] || bccomp($totalWeight, '0', 0) === 0) {
+            if (bccomp($amountCents, '0', 0) !== 0) {
+                throw new InvalidArgumentException('Cannot allocate an amount across zero weights.');
+            }
+
+            return array_fill(0, count($weights), '0.00');
+        }
+
+        $shares = [];
+        $remainders = [];
+        $allocated = '0';
+
+        foreach ($weightCents as $index => $weight) {
+            $exact = bcdiv(bcmul($amountCents, $weight, 0), $totalWeight, 10);
+            $floor = bcadd($exact, '0', 0); // truncation == floor for non-negative values
+            $shares[$index] = $floor;
+            $remainders[$index] = bcsub($exact, $floor, 10);
+            $allocated = bcadd($allocated, $floor, 0);
+        }
+
+        // Hand out the leftover cents to the largest remainders (ties: earlier lines first).
+        $leftover = (int) bcsub($amountCents, $allocated, 0);
+        $order = array_keys($remainders);
+        usort($order, fn (int $a, int $b) => bccomp($remainders[$b], $remainders[$a], 10) ?: $a <=> $b);
+
+        foreach (array_slice($order, 0, $leftover) as $index) {
+            $shares[$index] = bcadd($shares[$index], '1', 0);
+        }
+
+        return array_map(fn (string $cents) => bcdiv($cents, '100', self::SCALE), $shares);
+    }
+
     public static function cmp(string $a, string $b): int
     {
         return bccomp($a, $b, self::SCALE);

@@ -7,6 +7,7 @@ use App\Domain\Inventory\Exceptions\InsufficientStockException;
 use App\Models\Product;
 use App\Models\ProductStock;
 use App\Models\StockMovement;
+use App\Support\Money;
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -52,6 +53,7 @@ class StockService
 
             // Lock balances in a stable order to avoid deadlocks between concurrent multi-line transactions.
             $balances = $this->lockBalances($productIds->all());
+            $averageCosts = ProductStock::whereKey($productIds)->pluck('average_cost', 'product_id')->all();
             $recorded = collect();
 
             foreach ($movements as $data) {
@@ -63,6 +65,15 @@ class StockService
                     throw InsufficientStockException::forProduct($products->get($data->productId), $balance, $data->quantity);
                 }
 
+                $unitCost = $data->unitCost;
+
+                if ($data->type->isInbound() && $unitCost !== null) {
+                    $averageCosts[$data->productId] = $this->movingAverage($balance, $averageCosts[$data->productId] ?? null, $data->quantity, $unitCost);
+                } elseif (! $data->type->isInbound() && $unitCost === null) {
+                    // Snapshot the cost of goods leaving stock (profit reporting must not follow later price edits).
+                    $unitCost = $averageCosts[$data->productId] ?? Money::of($products->get($data->productId)->purchase_price);
+                }
+
                 // Later lines for the same product build on this running balance.
                 $balances[$data->productId] = $newBalance;
 
@@ -71,7 +82,7 @@ class StockService
                     'type' => $data->type,
                     'quantity' => $data->signedQuantity(),
                     'balance_after' => $newBalance,
-                    'unit_cost' => $data->unitCost,
+                    'unit_cost' => $unitCost,
                     'reference_type' => $data->reference?->getMorphClass(),
                     'reference_id' => $data->reference?->getKey(),
                     'reason' => $data->reason,
@@ -82,11 +93,40 @@ class StockService
             }
 
             foreach ($recorded->groupBy('product_id') as $productId => $productMovements) {
-                ProductStock::whereKey($productId)->update(['quantity' => $productMovements->last()->balance_after]);
+                ProductStock::whereKey($productId)->update([
+                    'quantity' => $productMovements->last()->balance_after,
+                    'average_cost' => $averageCosts[$productId] ?? null,
+                ]);
             }
 
             return $recorded;
         }, self::DEADLOCK_ATTEMPTS);
+    }
+
+    /**
+     * Moving weighted-average unit cost of the product's stock (null until costed stock arrives).
+     */
+    public function averageCost(Product|int $product): ?string
+    {
+        $productId = $product instanceof Product ? $product->getKey() : $product;
+        $cost = ProductStock::whereKey($productId)->value('average_cost');
+
+        return $cost === null ? null : Money::of((string) $cost);
+    }
+
+    /**
+     * (on-hand × average + received × cost) ÷ (on-hand + received). When nothing (or a negative
+     * quantity) is on hand, the received cost becomes the average.
+     */
+    private function movingAverage(int $onHand, ?string $average, int $received, string $unitCost): string
+    {
+        if ($onHand <= 0 || $average === null) {
+            return Money::of($unitCost);
+        }
+
+        $value = Money::add(Money::mul(Money::of((string) $average), $onHand), Money::mul(Money::of($unitCost), $received));
+
+        return Money::proportion($value, 1, $onHand + $received);
     }
 
     /**
