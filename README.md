@@ -1,0 +1,64 @@
+# Mobile Shop Inventory + POS + Mobile Service
+
+Start with `CLAUDE.md`.
+
+Then execute tasks in `docs/tasks/TASK_INDEX.md` one at a time.
+
+The design intentionally separates:
+- product revenue,
+- mobile service revenue,
+- stock movements,
+- party ledger,
+- expenses.
+
+This is important because one mobile repair invoice can be individual or contain both (parts or accessories) and service charges.
+
+Example:
+IC/Part: 800
+Service charge: 500
+Invoice total: 1,300
+
+The 800 product line affects stock and product revenue.
+The 500 service line affects service revenue but not stock.
+The 1,300 contributes to combined revenue.
+
+The task files are deliberately small so Claude Code can load only the context needed for the current task.
+
+## Local development
+
+Requirements: PHP 8.2+, Composer, Node 20+, MySQL 8+.
+
+```bash
+composer install
+npm install
+cp .env.example .env            # then set DB_* and ADMIN_* values
+php artisan key:generate
+mysql -u root -p -e "CREATE DATABASE mobile_shop_pos CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
+php artisan app:check-environment   # validates config + MySQL 8 connectivity
+php artisan migrate --seed          # creates roles, permissions and the initial Admin
+composer dev                        # serves app, queue, logs and Vite
+```
+
+The seeder creates the Admin from `ADMIN_NAME` / `ADMIN_EMAIL` / `ADMIN_PASSWORD`. In local
+environments an empty `ADMIN_PASSWORD` falls back to `password`; elsewhere the admin is skipped
+until a password is provided. Public self-registration is disabled — an Admin creates staff accounts.
+
+### Checks
+
+```bash
+php artisan test        # PHPUnit feature tests (in-memory SQLite)
+vendor/bin/pint --test  # PHP code style
+npm run lint && npx tsc --noEmit && npm run format:check
+```
+
+To run the suite against MySQL, create `mobile_shop_pos_testing` and run
+`DB_CONNECTION=mysql DB_DATABASE=mobile_shop_pos_testing php artisan test`.
+
+### Conventions
+
+- `app/Actions` — transaction workflows (one class per use case), called from thin controllers.
+- `app/Domain/<Module>` — domain services per business module (see `docs/02-architecture.md`).
+- `app/Enums/Permission.php` — the single catalogue of permission names; `SystemRole` holds the built-in roles.
+- Audit columns: use `$table->userstamps()` in migrations and the `HasUserstamps` model trait.
+- Frontend: pages in `resources/js/pages`, module UI in `resources/js/features/<module>`,
+  sidebar entries in `resources/js/config/navigation.ts` (each with its required `permission`).
