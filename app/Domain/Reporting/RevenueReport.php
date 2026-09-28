@@ -159,7 +159,7 @@ class RevenueReport
 
         $lines = $pos->unionAll($parts)->unionAll($returns);
 
-        return DB::query()
+        $query = DB::query()
             ->fromSub($lines, 'lines')
             ->join('products', 'products.id', '=', 'lines.product_id')
             ->groupBy('lines.product_id', 'products.name', 'products.sku')
@@ -170,23 +170,23 @@ class RevenueReport
                 SUM(lines.pos_amount) + SUM(lines.parts_amount) - SUM(lines.returned_amount) as net_amount,
                 SUM(lines.cost) as cost')
             ->orderByDesc('net_amount')
-            ->orderBy('products.name')
-            ->paginate($perPage)
-            ->withQueryString()
-            ->through(fn ($r) => [
-                'product_id' => (int) $r->product_id,
-                'name' => $r->name,
-                'sku' => $r->sku,
-                'pos_qty' => (int) $r->pos_qty,
-                'pos_amount' => Money::of((string) $r->pos_amount),
-                'parts_qty' => (int) $r->parts_qty,
-                'parts_amount' => Money::of((string) $r->parts_amount),
-                'returned_qty' => (int) $r->returned_qty,
-                'returned_amount' => Money::of((string) $r->returned_amount),
-                'net_qty' => (int) $r->pos_qty + (int) $r->parts_qty - (int) $r->returned_qty,
-                'net_amount' => Money::of((string) $r->net_amount),
-                'cost' => Money::of((string) $r->cost),
-            ]);
+            ->orderBy('products.name');
+
+        // One row per product sold: run the aggregate once instead of once more for the count.
+        return AggregatePaginator::paginate($query, $perPage, 'page', fn ($r) => [
+            'product_id' => (int) $r->product_id,
+            'name' => $r->name,
+            'sku' => $r->sku,
+            'pos_qty' => (int) $r->pos_qty,
+            'pos_amount' => Money::of((string) $r->pos_amount),
+            'parts_qty' => (int) $r->parts_qty,
+            'parts_amount' => Money::of((string) $r->parts_amount),
+            'returned_qty' => (int) $r->returned_qty,
+            'returned_amount' => Money::of((string) $r->returned_amount),
+            'net_qty' => (int) $r->pos_qty + (int) $r->parts_qty - (int) $r->returned_qty,
+            'net_amount' => Money::of((string) $r->net_amount),
+            'cost' => Money::of((string) $r->cost),
+        ]);
     }
 
     /**
