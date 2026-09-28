@@ -3,7 +3,7 @@
 namespace App\Enums;
 
 /**
- * Party ledger entry types. Sale/customer types are posted by the POS module when built.
+ * Party ledger entry types.
  */
 enum LedgerEntryType: string
 {
@@ -17,6 +17,7 @@ enum LedgerEntryType: string
     case CustomerPayment = 'CUSTOMER_PAYMENT';
     case SaleReturn = 'SALE_RETURN';
     case CustomerRefund = 'CUSTOMER_REFUND';
+    case ServiceInvoice = 'SERVICE_INVOICE';
     case ManualAdjustment = 'MANUAL_ADJUSTMENT';
 
     public function label(): string
@@ -32,6 +33,7 @@ enum LedgerEntryType: string
             self::CustomerPayment => 'Payment from customer',
             self::SaleReturn => 'Sale return',
             self::CustomerRefund => 'Refund to customer',
+            self::ServiceInvoice => 'Service invoice (receivable)',
             self::ManualAdjustment => 'Manual adjustment',
         };
     }

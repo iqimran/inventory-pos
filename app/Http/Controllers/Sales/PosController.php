@@ -7,6 +7,7 @@ use App\Domain\Inventory\ProductSearch;
 use App\Domain\Sales\CustomerDirectory;
 use App\Enums\PartyType;
 use App\Enums\PaymentMethod;
+use App\Enums\Permission;
 use App\Enums\SaleType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Sales\QuickCustomerRequest;
@@ -37,7 +38,8 @@ class PosController extends Controller
 
     public function products(Request $request, ProductSearch $search): JsonResponse
     {
-        Gate::authorize('create', Sale::class);
+        // Used by the POS and by service jobs (parts).
+        abort_unless($request->user()->can('create', Sale::class) || $request->user()->can(Permission::ServiceManage->value), 403);
 
         $term = trim((string) $request->query('q', ''));
 
@@ -63,8 +65,9 @@ class PosController extends Controller
 
     public function customers(Request $request, CustomerDirectory $directory): JsonResponse
     {
-        // Used by the POS and by due collection.
-        abort_unless($request->user()->can('create', Sale::class) || $request->user()->can('collect', Sale::class), 403);
+        // Used by the POS, due collection and service job intake.
+        abort_unless($request->user()->can('create', Sale::class) || $request->user()->can('collect', Sale::class)
+            || $request->user()->can(Permission::ServiceManage->value), 403);
 
         $customers = $directory->search((string) $request->query('q', ''));
 

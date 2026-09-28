@@ -5,6 +5,7 @@ namespace App\Http\Resources;
 use App\Models\Payment;
 use App\Models\Purchase;
 use App\Models\Sale;
+use App\Models\ServiceInvoice;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -39,6 +40,7 @@ class PaymentResource extends JsonResource
                 'document' => match (true) {
                     $allocation->allocatable instanceof Purchase => ['type' => 'purchase', 'id' => $allocation->allocatable->id, 'number' => $allocation->allocatable->purchase_no],
                     $allocation->allocatable instanceof Sale => ['type' => 'sale', 'id' => $allocation->allocatable->id, 'number' => $allocation->allocatable->invoice_no],
+                    $allocation->allocatable instanceof ServiceInvoice => ['type' => 'service_invoice', 'id' => $allocation->allocatable->id, 'number' => $allocation->allocatable->invoice_no],
                     default => null,
                 },
                 'created_at' => $allocation->created_at?->toIso8601String(),

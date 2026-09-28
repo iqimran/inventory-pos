@@ -25,6 +25,10 @@ class CustomerPaymentRequest extends FormRequest
         return [
             'party_id' => ['required', 'integer', Rule::exists('parties', 'id')->whereIn('type', CustomerDirectory::customerTypes())],
             'sale_id' => ['nullable', 'integer', Rule::exists('sales', 'id')->where('party_id', $this->integer('party_id'))],
+            'service_invoice_id' => [
+                'nullable', 'integer', 'prohibits:sale_id',
+                Rule::exists('service_invoices', 'id')->where('party_id', $this->integer('party_id')),
+            ],
             'amount' => MoneyRules::positive(),
             'method' => ['required', Rule::enum(PaymentMethod::class)],
             'date' => ['required', 'date', 'before_or_equal:today'],
@@ -38,6 +42,7 @@ class CustomerPaymentRequest extends FormRequest
         return [
             'party_id.exists' => 'Select a customer.',
             'sale_id.exists' => 'The sale does not belong to this customer.',
+            'service_invoice_id.exists' => 'The service invoice does not belong to this customer.',
         ];
     }
 }

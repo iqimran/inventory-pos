@@ -38,13 +38,13 @@ Legend:
 - [x] T024 Sale return
 
 ## Mobile service
-- [ ] T025 Customer/device
-- [ ] T026 Service job
-- [ ] T027 Service status workflow
-- [ ] T028 Service parts
-- [ ] T029 Service charge
-- [ ] T030 Combined service invoice
-- [ ] T031 Service payment/due
+- [x] T025 Customer/device
+- [x] T026 Service job
+- [x] T027 Service status workflow
+- [x] T028 Service parts
+- [x] T029 Service charge
+- [x] T030 Combined service invoice
+- [x] T031 Service payment/due
 
 ## Expenses
 - [ ] T032 Expense types

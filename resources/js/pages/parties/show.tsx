@@ -45,6 +45,7 @@ interface ShowPartyProps {
 function referenceLink(entry: StatementEntry): string | null {
     if (!entry.reference_id) return null;
     if (entry.reference_type === 'purchase') return route('purchases.show', entry.reference_id);
+    if (entry.reference_type === 'service_invoice') return route('service-invoices.show', entry.reference_id);
     if (entry.reference_type === 'payment') return route('supplier-payments.show', entry.reference_id);
     return null;
 }

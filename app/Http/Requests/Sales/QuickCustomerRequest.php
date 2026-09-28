@@ -8,13 +8,14 @@ use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * Minimal customer creation from the POS counter (name + phone).
+ * Minimal customer creation from the POS counter or service intake (name + phone).
  */
 class QuickCustomerRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('create', Sale::class) || $this->user()->can(Permission::PartiesManage->value);
+        return $this->user()->can('create', Sale::class) || $this->user()->can(Permission::PartiesManage->value)
+            || $this->user()->can(Permission::ServiceManage->value);
     }
 
     protected function prepareForValidation(): void

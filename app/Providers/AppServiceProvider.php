@@ -11,6 +11,8 @@ use App\Models\Purchase;
 use App\Models\PurchaseReturn;
 use App\Models\Sale;
 use App\Models\SaleReturn;
+use App\Models\ServiceInvoice;
+use App\Models\ServiceJob;
 use App\Models\Subcategory;
 use App\Models\Unit;
 use App\Models\User;
@@ -60,6 +62,8 @@ class AppServiceProvider extends ServiceProvider
             'purchase_return' => PurchaseReturn::class,
             'sale' => Sale::class,
             'sale_return' => SaleReturn::class,
+            'service_job' => ServiceJob::class,
+            'service_invoice' => ServiceInvoice::class,
         ]);
 
         foreach ([Category::class, Subcategory::class, Brand::class, Unit::class, Product::class] as $model) {

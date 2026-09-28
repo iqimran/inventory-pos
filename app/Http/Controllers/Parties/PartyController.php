@@ -119,7 +119,7 @@ class PartyController extends Controller
     {
         Gate::authorize('delete', $party);
 
-        $delete->handle($party, ['ledgerEntries', 'purchases', 'payments']);
+        $delete->handle($party, ['ledgerEntries', 'purchases', 'payments', 'devices']);
 
         return to_route('parties.index')->with('success', "{$party->name} deleted.");
     }

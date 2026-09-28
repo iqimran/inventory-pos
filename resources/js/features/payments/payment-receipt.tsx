@@ -3,7 +3,10 @@ import { formatDateTime, formatMoney, toCents } from '@/lib/format';
 import { Link } from '@inertiajs/react';
 
 function documentHref(document: { type: string; id: number }): string {
-    return document.type === 'sale' ? route('sales.show', document.id) : route('purchases.show', document.id);
+    if (document.type === 'sale') return route('sales.show', document.id);
+    if (document.type === 'service_invoice') return route('service-invoices.show', document.id);
+
+    return route('purchases.show', document.id);
 }
 
 /**

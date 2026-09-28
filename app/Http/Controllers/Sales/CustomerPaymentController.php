@@ -12,6 +12,7 @@ use App\Http\Resources\PaymentResource;
 use App\Models\Party;
 use App\Models\Payment;
 use App\Models\Sale;
+use App\Models\ServiceInvoice;
 use App\Support\Money;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -64,8 +65,22 @@ class CustomerPaymentController extends Controller
                         'total' => $sale->total,
                         'due_amount' => $sale->due_amount,
                     ]),
+                'due_service_invoices' => ServiceInvoice::query()
+                    ->where('party_id', $customer->id)
+                    ->where('due_amount', '>', 0)
+                    ->orderBy('invoiced_at')
+                    ->orderBy('id')
+                    ->get(['id', 'invoice_no', 'invoiced_at', 'total', 'due_amount'])
+                    ->map(fn (ServiceInvoice $invoice) => [
+                        'id' => $invoice->id,
+                        'invoice_no' => $invoice->invoice_no,
+                        'invoiced_at' => $invoice->invoiced_at->toIso8601String(),
+                        'total' => $invoice->total,
+                        'due_amount' => $invoice->due_amount,
+                    ]),
             ] : null,
             'saleId' => $request->integer('sale_id') ?: null,
+            'serviceInvoiceId' => $request->integer('service_invoice_id') ?: null,
         ]);
     }
 
@@ -79,6 +94,7 @@ class CustomerPaymentController extends Controller
             sale: $request->filled('sale_id') ? Sale::findOrFail($request->integer('sale_id')) : null,
             referenceNo: $request->validated('reference_no'),
             notes: $request->validated('notes'),
+            serviceInvoice: $request->filled('service_invoice_id') ? ServiceInvoice::findOrFail($request->integer('service_invoice_id')) : null,
         );
 
         return to_route('customer-payments.show', $payment)->with('success', "Payment {$payment->payment_no} received.");

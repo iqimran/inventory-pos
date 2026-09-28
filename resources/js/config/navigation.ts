@@ -6,6 +6,7 @@ import {
     ClipboardList,
     Contact,
     CreditCard,
+    FileText,
     FolderTree,
     LayoutGrid,
     Package,
@@ -14,10 +15,12 @@ import {
     ScanBarcode,
     ShieldCheck,
     ShoppingCart,
+    Smartphone,
     Tag,
     TriangleAlert,
     Undo2,
     Users,
+    Wrench,
 } from 'lucide-react';
 
 /**
@@ -36,6 +39,14 @@ export const navigation: NavGroup[] = [
             { title: 'Sales', url: '/sales', icon: Receipt, permission: 'sales.view' },
             { title: 'Sale returns', url: '/sale-returns', icon: Undo2, permission: 'sales.view' },
             { title: 'Customer payments', url: '/customer-payments', icon: CreditCard, permission: 'sales.view' },
+        ],
+    },
+    {
+        title: 'Mobile service',
+        items: [
+            { title: 'Service jobs', url: '/service/jobs', icon: Wrench, permission: 'service.view' },
+            { title: 'Devices', url: '/service/devices', icon: Smartphone, permission: 'service.view' },
+            { title: 'Service invoices', url: '/service/invoices', icon: FileText, permission: 'service.view' },
         ],
     },
     {

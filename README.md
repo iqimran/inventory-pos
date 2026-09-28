@@ -118,3 +118,26 @@ To run the suite against MySQL, create `mobile_shop_pos_testing` and run
   payment + ledger debit, capped at what the shop actually owes the customer) and/or kept as store credit
   (`credit_amount`). Walk-in returns are always refunded in full.
 - Requires the `returns.create` permission.
+
+### Mobile service rules
+
+- Customers are parties (CUSTOMER / BOTH). Devices belong to one customer and carry brand, model,
+  IMEI 1/2 (15 digits with a valid Luhn check digit, unique per customer), serial number and colour.
+- Jobs (`JOB-YYYYMM-000001`) follow RECEIVED → DIAGNOSING → WAITING_FOR_APPROVAL → IN_PROGRESS → READY
+  → DELIVERED. IN_PROGRESS may go back to WAITING_FOR_APPROVAL (extra fault) and READY back to IN_PROGRESS
+  (rework). Asking for approval needs a diagnosis; approval records the approved amount; CANCELLED needs a
+  reason and is only possible before invoicing. Every change is logged in `service_job_status_logs`.
+  Jobs are never deleted.
+- Parts are draft lines while the job is open: adding, changing or removing them does not touch stock.
+  Parts are consumed only when a READY job is invoiced — `SERVICE_PART_OUT` movements referencing the job,
+  with the cost snapshot stored on the part and the invoice line. After that, parts and charges are locked.
+- Service charges are separate SERVICE lines and never create stock movements.
+- The service invoice (`SRV-YYYYMM-000001`) combines PRODUCT lines (parts) and SERVICE lines (charges);
+  an invoice discount is spread across all lines exactly, and `product_total` / `service_total` hold the
+  net revenue per classification (their sum is the invoice total).
+- Invoicing is one transaction: invoice, stock-out, customer ledger debit (`SERVICE_INVOICE`), and any
+  payment received (credit). Dues are collected per service invoice or on account together with sale
+  dues (oldest first) from *Customer payments*, with `sales.collect`.
+- Permissions: `service.view` to see jobs, devices and invoices; `service.manage` to open/update jobs,
+  change status, edit parts/charges and invoice; part prices other than retail need `sales.price_override`.
+  Technicians are active users who hold `service.manage` (or Admin).

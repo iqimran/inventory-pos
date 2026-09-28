@@ -20,30 +20,45 @@ interface CustomerContext {
     balance: string;
     receivable: string;
     due_sales: { id: number; invoice_no: string; sold_at: string; total: string; due_amount: string }[];
+    due_service_invoices: { id: number; invoice_no: string; invoiced_at: string; total: string; due_amount: string }[];
 }
 
 interface CollectDueProps {
     methods: SelectOption[];
     customer: CustomerContext | null;
     saleId: number | null;
+    serviceInvoiceId: number | null;
 }
 
 const selectClass = 'border-input bg-background h-9 w-full rounded-md border px-3 text-sm';
 
-export default function CollectDue({ methods, customer, saleId }: CollectDueProps) {
+export default function CollectDue({ methods, customer, saleId, serviceInvoiceId }: CollectDueProps) {
     const form = useForm({
         party_id: customer ? String(customer.id) : '',
         sale_id: saleId ? String(saleId) : '',
+        service_invoice_id: serviceInvoiceId ? String(serviceInvoiceId) : '',
         amount: '',
         method: 'CASH',
         date: new Date().toISOString().slice(0, 10),
         reference_no: '',
         notes: '',
     });
-    const selectedSale = customer?.due_sales.find((sale) => String(sale.id) === form.data.sale_id);
+    const selectedDocument =
+        customer?.due_sales.find((sale) => String(sale.id) === form.data.sale_id) ??
+        customer?.due_service_invoices.find((invoice) => String(invoice.id) === form.data.service_invoice_id);
+    // Sales and service invoices share one picker: values are "sale:ID" / "service_invoice:ID".
+    const target = form.data.sale_id
+        ? `sale:${form.data.sale_id}`
+        : form.data.service_invoice_id
+          ? `service_invoice:${form.data.service_invoice_id}`
+          : '';
+    const selectTarget = (value: string) => {
+        const [type, id = ''] = value.split(':');
+        form.setData((data) => ({ ...data, sale_id: type === 'sale' ? id : '', service_invoice_id: type === 'service_invoice' ? id : '' }));
+    };
 
     const selectCustomer = (picked: Customer | null) => {
-        form.setData((data) => ({ ...data, party_id: picked ? String(picked.id) : '', sale_id: '' }));
+        form.setData((data) => ({ ...data, party_id: picked ? String(picked.id) : '', sale_id: '', service_invoice_id: '' }));
         router.reload({ only: ['customer'], data: { party_id: picked?.id } });
     };
 
@@ -61,7 +76,10 @@ export default function CollectDue({ methods, customer, saleId }: CollectDueProp
         >
             <Head title="Collect due" />
             <div className="max-w-3xl space-y-6 p-4 md:p-6">
-                <Heading title="Collect customer due" description="Receive money against one sale, or on account to clear the oldest dues first." />
+                <Heading
+                    title="Collect customer due"
+                    description="Receive money against one sale or service invoice, or on account to clear the oldest dues first."
+                />
 
                 <div className="grid gap-2">
                     <Label>Customer</Label>
@@ -83,20 +101,20 @@ export default function CollectDue({ methods, customer, saleId }: CollectDueProp
 
                         <div className="grid gap-2">
                             <Label htmlFor="sale_id">Apply to</Label>
-                            <select
-                                id="sale_id"
-                                className={selectClass}
-                                value={form.data.sale_id}
-                                onChange={(e) => form.setData('sale_id', e.target.value)}
-                            >
+                            <select id="sale_id" className={selectClass} value={target} onChange={(e) => selectTarget(e.target.value)}>
                                 <option value="">On account — oldest dues first</option>
                                 {customer.due_sales.map((sale) => (
-                                    <option key={sale.id} value={sale.id}>
+                                    <option key={`sale-${sale.id}`} value={`sale:${sale.id}`}>
                                         {sale.invoice_no} ({formatDateTime(sale.sold_at)}) — due {formatMoney(sale.due_amount)}
                                     </option>
                                 ))}
+                                {customer.due_service_invoices.map((invoice) => (
+                                    <option key={`service-${invoice.id}`} value={`service_invoice:${invoice.id}`}>
+                                        {invoice.invoice_no} (service, {formatDateTime(invoice.invoiced_at)}) — due {formatMoney(invoice.due_amount)}
+                                    </option>
+                                ))}
                             </select>
-                            <InputError message={form.errors.sale_id} />
+                            <InputError message={form.errors.sale_id ?? form.errors.service_invoice_id} />
                         </div>
 
                         <div className="grid gap-4 sm:grid-cols-3">
@@ -114,9 +132,9 @@ export default function CollectDue({ methods, customer, saleId }: CollectDueProp
                                 <button
                                     type="button"
                                     className="text-muted-foreground text-left text-xs hover:underline"
-                                    onClick={() => form.setData('amount', selectedSale ? selectedSale.due_amount : customer.receivable)}
+                                    onClick={() => form.setData('amount', selectedDocument ? selectedDocument.due_amount : customer.receivable)}
                                 >
-                                    Full {selectedSale ? 'sale due' : 'receivable'}
+                                    Full {selectedDocument ? 'invoice due' : 'receivable'}
                                 </button>
                                 <InputError message={form.errors.amount} />
                             </div>

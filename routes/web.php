@@ -19,6 +19,12 @@ use App\Http\Controllers\Sales\CustomerPaymentController;
 use App\Http\Controllers\Sales\PosController;
 use App\Http\Controllers\Sales\SaleController;
 use App\Http\Controllers\Sales\SaleReturnController;
+use App\Http\Controllers\Service\DeviceController;
+use App\Http\Controllers\Service\ServiceInvoiceController;
+use App\Http\Controllers\Service\ServiceJobChargeController;
+use App\Http\Controllers\Service\ServiceJobController;
+use App\Http\Controllers\Service\ServiceJobPartController;
+use App\Http\Controllers\Service\ServiceJobStatusController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -93,6 +99,33 @@ Route::middleware(['auth'])->group(function () {
     Route::get('customer-payments/create', [CustomerPaymentController::class, 'create'])->name('customer-payments.create');
     Route::post('customer-payments', [CustomerPaymentController::class, 'store'])->name('customer-payments.store');
     Route::get('customer-payments/{payment}', [CustomerPaymentController::class, 'show'])->name('customer-payments.show');
+
+    // Mobile service. Jobs are never deleted (cancelled instead); invoices are immutable.
+    Route::prefix('service')->group(function () {
+        Route::get('devices', [DeviceController::class, 'index'])->name('devices.index');
+        Route::post('devices', [DeviceController::class, 'store'])->name('devices.store');
+        Route::put('devices/{device}', [DeviceController::class, 'update'])->name('devices.update');
+        Route::get('customers/{party}/devices', [DeviceController::class, 'forCustomer'])->name('service.customer-devices');
+
+        Route::resource('jobs', ServiceJobController::class)
+            ->only(['index', 'create', 'store', 'show', 'update'])
+            ->parameters(['jobs' => 'serviceJob'])
+            ->names('service-jobs');
+
+        Route::scopeBindings()->prefix('jobs/{serviceJob}')->name('service-jobs.')->group(function () {
+            Route::post('status', [ServiceJobStatusController::class, 'store'])->name('status');
+            Route::post('parts', [ServiceJobPartController::class, 'store'])->name('parts.store');
+            Route::put('parts/{item}', [ServiceJobPartController::class, 'update'])->name('parts.update');
+            Route::delete('parts/{item}', [ServiceJobPartController::class, 'destroy'])->name('parts.destroy');
+            Route::post('charges', [ServiceJobChargeController::class, 'store'])->name('charges.store');
+            Route::put('charges/{charge}', [ServiceJobChargeController::class, 'update'])->name('charges.update');
+            Route::delete('charges/{charge}', [ServiceJobChargeController::class, 'destroy'])->name('charges.destroy');
+            Route::post('invoice', [ServiceInvoiceController::class, 'store'])->name('invoice.store');
+        });
+
+        Route::get('invoices', [ServiceInvoiceController::class, 'index'])->name('service-invoices.index');
+        Route::get('invoices/{serviceInvoice}', [ServiceInvoiceController::class, 'show'])->name('service-invoices.show');
+    });
 });
 
 require __DIR__.'/settings.php';
