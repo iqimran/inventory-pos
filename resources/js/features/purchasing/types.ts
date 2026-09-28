@@ -49,7 +49,9 @@ export interface Purchase {
     allocations?: {
         id: number;
         amount: string;
-        payment: { id: number; payment_no: string; purpose_label: string; method_label: string; paid_at: string };
+        created_at: string | null;
+        /** Null when settled from the supplier's opening-balance advance. */
+        payment: { id: number; payment_no: string; purpose_label: string; method_label: string; paid_at: string } | null;
     }[];
     created_by?: string | null;
 }

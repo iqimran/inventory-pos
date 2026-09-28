@@ -1,5 +1,6 @@
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import InputError from '@/components/input-error';
+import { Pagination } from '@/components/pagination';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,6 +12,7 @@ import { type Party } from '@/features/purchasing/types';
 import { useCan } from '@/hooks/use-can';
 import AppLayout from '@/layouts/app-layout';
 import { formatDateTime, formatMoney } from '@/lib/format';
+import { type PageMeta } from '@/types';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { FormEventHandler, useState } from 'react';
 
@@ -38,6 +40,8 @@ interface ShowPartyProps {
         total_debit: string;
         total_credit: string;
         entries: StatementEntry[];
+        page_opening: string;
+        pagination: (PageMeta & { current_page: number }) | null;
     };
     summary: { balance: string; available_advance: string; due_purchases_count: number; due_purchases_amount: string };
 }
@@ -54,6 +58,8 @@ export default function ShowParty({ party: { data: party }, statement, summary }
     const can = useCan();
     const { errors } = usePage().props as { errors: Record<string, string> };
     const [range, setRange] = useState({ from: statement.from, to: statement.to });
+    const firstPage = (statement.pagination?.current_page ?? 1) === 1;
+    const lastPage = !statement.pagination || statement.pagination.current_page >= statement.pagination.last_page;
     const [adjusting, setAdjusting] = useState(false);
     const [deleting, setDeleting] = useState(false);
     const adjustment = useForm({ side: 'credit', amount: '', reason: '' });
@@ -195,10 +201,10 @@ export default function ShowParty({ party: { data: party }, statement, summary }
                             <tbody>
                                 <tr className="bg-muted/20 border-t">
                                     <td className="px-4 py-2" colSpan={4}>
-                                        Opening balance on {statement.from}
+                                        {firstPage ? `Opening balance on ${statement.from}` : 'Balance brought forward'}
                                     </td>
                                     <td className="px-4 py-2 text-right">
-                                        <PartyBalance balance={statement.opening_balance} />
+                                        <PartyBalance balance={firstPage ? statement.opening_balance : statement.page_opening} />
                                     </td>
                                 </tr>
                                 {statement.entries.length === 0 && (
@@ -239,9 +245,20 @@ export default function ShowParty({ party: { data: party }, statement, summary }
                                         </tr>
                                     );
                                 })}
+                                {!lastPage && statement.entries.length > 0 && (
+                                    <tr className="bg-muted/20 border-t">
+                                        <td className="px-4 py-2" colSpan={4}>
+                                            Balance carried forward
+                                        </td>
+                                        <td className="px-4 py-2 text-right">
+                                            <PartyBalance balance={statement.entries[statement.entries.length - 1].balance} />
+                                        </td>
+                                    </tr>
+                                )}
                                 <tr className="bg-muted/20 border-t font-medium">
                                     <td className="px-4 py-2" colSpan={2}>
                                         Closing balance on {statement.to}
+                                        {!lastPage && <span className="text-muted-foreground font-normal"> (whole period)</span>}
                                     </td>
                                     <td className="px-4 py-2 text-right tabular-nums">{formatMoney(statement.total_debit)}</td>
                                     <td className="px-4 py-2 text-right tabular-nums">{formatMoney(statement.total_credit)}</td>
@@ -252,6 +269,7 @@ export default function ShowParty({ party: { data: party }, statement, summary }
                             </tbody>
                         </table>
                     </div>
+                    {statement.pagination && <Pagination meta={statement.pagination} />}
                     <p className="text-muted-foreground text-xs">
                         Debit increases what the party owes the shop; credit increases what the shop owes the party.
                     </p>

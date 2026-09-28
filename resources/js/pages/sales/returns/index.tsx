@@ -35,7 +35,10 @@ export default function SaleReturnsIndex({ returns }: { returns: Paginated<SaleR
                             {returns.data.map((row) => (
                                 <tr key={row.id} className="border-t">
                                     <td className="px-4 py-3">
-                                        <Link href={route('sale-returns.show', row.id)} className="font-mono font-medium hover:underline">
+                                        <Link
+                                            href={route('sale-returns.show', row.id)}
+                                            className="font-mono font-medium whitespace-nowrap hover:underline"
+                                        >
                                             {row.return_no}
                                         </Link>
                                         <div className="text-muted-foreground text-xs">
@@ -45,7 +48,7 @@ export default function SaleReturnsIndex({ returns }: { returns: Paginated<SaleR
                                     </td>
                                     <td className="px-4 py-3">
                                         {row.sale && (
-                                            <Link href={route('sales.show', row.sale.id)} className="font-mono hover:underline">
+                                            <Link href={route('sales.show', row.sale.id)} className="font-mono whitespace-nowrap hover:underline">
                                                 {row.sale.invoice_no}
                                             </Link>
                                         )}

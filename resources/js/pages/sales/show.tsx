@@ -118,7 +118,10 @@ export default function ShowSale({ sale: { data: sale } }: { sale: { data: Sale 
                                 {sale.allocations?.map((allocation) => (
                                     <li key={allocation.id} className="flex justify-between gap-2 px-4 py-2">
                                         <span>
-                                            <Link href={route('customer-payments.show', allocation.payment.id)} className="font-mono hover:underline">
+                                            <Link
+                                                href={route('customer-payments.show', allocation.payment.id)}
+                                                className="font-mono whitespace-nowrap hover:underline"
+                                            >
                                                 {allocation.payment.payment_no}
                                             </Link>
                                             <span className="text-muted-foreground ml-2 text-xs">
@@ -137,7 +140,10 @@ export default function ShowSale({ sale: { data: sale } }: { sale: { data: Sale 
                                     {sale.returns.map((saleReturn) => (
                                         <li key={saleReturn.id} className="flex justify-between gap-2 px-4 py-2">
                                             <span>
-                                                <Link href={route('sale-returns.show', saleReturn.id)} className="font-mono hover:underline">
+                                                <Link
+                                                    href={route('sale-returns.show', saleReturn.id)}
+                                                    className="font-mono whitespace-nowrap hover:underline"
+                                                >
                                                     {saleReturn.return_no}
                                                 </Link>
                                                 <span className="text-muted-foreground ml-2 text-xs">{saleReturn.reason}</span>

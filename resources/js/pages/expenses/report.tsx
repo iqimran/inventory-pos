@@ -232,7 +232,7 @@ export default function ExpenseReport({ report, types, filters, expenses }: Expe
                                     <tr key={expense.id} className="border-t">
                                         <td className="px-4 py-2 tabular-nums">{expense.expense_date}</td>
                                         <td className="px-4 py-2">
-                                            <Link href={route('expenses.show', expense.id)} className="font-mono hover:underline">
+                                            <Link href={route('expenses.show', expense.id)} className="font-mono whitespace-nowrap hover:underline">
                                                 {expense.expense_no}
                                             </Link>
                                         </td>

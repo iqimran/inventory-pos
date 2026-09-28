@@ -1,0 +1,104 @@
+# Production (single VPS): docker compose -f docker-compose.prod.yml up -d --build
+#
+# Secrets come from the server's .env (never committed). MySQL has no published port and is only
+# reachable by the app containers on the internal network. See docs/deployment.md.
+# Separate from the development project so the two never share volumes (e.g. the database).
+name: mobile-shop-pos-prod
+
+x-app: &app
+  build:
+    context: .
+    target: production
+  image: ${APP_IMAGE:-mobile-shop-pos-app}:${APP_VERSION:-latest}
+  env_file: ${APP_ENV_FILE:-.env}
+  environment:
+    APP_ENV: production
+    APP_DEBUG: "false"
+    DB_CONNECTION: mysql
+    DB_HOST: mysql
+    DB_PORT: 3306
+    LOG_CHANNEL: stderr
+  volumes:
+    - app-storage:/var/www/html/storage
+  depends_on:
+    mysql:
+      condition: service_healthy
+  restart: unless-stopped
+  networks: [backend]
+
+services:
+  app:
+    <<: *app
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      LOG_CHANNEL: stderr
+      RUN_MIGRATIONS: ${RUN_MIGRATIONS:-false}
+    healthcheck:
+      test: ["CMD-SHELL", "SCRIPT_NAME=/fpm-ping SCRIPT_FILENAME=/fpm-ping REQUEST_METHOD=GET cgi-fcgi -bind -connect 127.0.0.1:9000 | grep -q pong"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  web:
+    build:
+      context: .
+      target: web
+    image: ${WEB_IMAGE:-mobile-shop-pos-web}:${APP_VERSION:-latest}
+    ports:
+      - "${HTTP_PORT:-80}:80"
+    volumes:
+      # Serves files published with storage:link (public/storage → storage/app/public).
+      - app-storage:/var/www/html/storage:ro
+    depends_on:
+      app:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/up >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks: [backend]
+
+  # Runs the Laravel scheduler (nightly stock/ledger integrity checks, see routes/console.php).
+  scheduler:
+    <<: *app
+    command: ["php", "artisan", "schedule:work"]
+
+  # Optional: no feature queues work today. Enable with: --profile queue
+  queue:
+    <<: *app
+    command: ["php", "artisan", "queue:work", "--sleep=3", "--tries=3", "--max-time=3600"]
+    profiles: [queue]
+
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:?DB_DATABASE is required}
+      MYSQL_USER: ${DB_USERNAME:?DB_USERNAME is required (not root)}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?DB_ROOT_PASSWORD is required}
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./docker/mysql/my.cnf:/etc/mysql/conf.d/app.cnf:ro
+    # No "ports": MySQL is never published outside the Docker network.
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    restart: unless-stopped
+    networks: [backend]
+
+volumes:
+  mysql-data:
+  app-storage:
+
+networks:
+  backend:

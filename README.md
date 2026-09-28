@@ -24,6 +24,25 @@ The 1,300 contributes to combined revenue.
 
 The task files are deliberately small so Claude Code can load only the context needed for the current task.
 
+## Documentation
+
+- **Deployment & operations** (Docker development, production on a VPS, HTTPS, backups, rollback):
+  [`docs/deployment.md`](docs/deployment.md)
+- **Git and release workflow**: [`docs/git-workflow.md`](docs/git-workflow.md)
+- **Deployment verification report**: [`docs/deployment-verification.md`](docs/deployment-verification.md)
+
+## Quick start with Docker
+
+```bash
+cp .env.example .env
+export UID=$(id -u) GID=$(id -g)
+docker compose up -d                                  # http://localhost:8080
+docker compose exec app php artisan key:generate
+docker compose exec app php artisan migrate --seed    # admin@example.com / password (local only)
+```
+
+Production: `docker compose -f docker-compose.prod.yml up -d --build` — read `docs/deployment.md` first.
+
 ## Local development
 
 Requirements: PHP 8.2+, Composer, Node 20+, MySQL 8+.
@@ -46,13 +65,14 @@ until a password is provided. Public self-registration is disabled — an Admin 
 ### Checks
 
 ```bash
-php artisan test        # PHPUnit feature tests (in-memory SQLite)
+php artisan test        # PHPUnit feature tests (always in-memory SQLite)
+php artisan test --group=critical   # critical workflow/authorization/revenue suites (pre-deploy gate)
 vendor/bin/pint --test  # PHP code style
 npm run lint && npx tsc --noEmit && npm run format:check
 ```
 
 To run the suite against MySQL, create `mobile_shop_pos_testing` and run
-`DB_CONNECTION=mysql DB_DATABASE=mobile_shop_pos_testing php artisan test`.
+`php artisan test --configuration=phpunit.mysql.xml` (it always uses that `_testing` database).
 
 ### Conventions
 

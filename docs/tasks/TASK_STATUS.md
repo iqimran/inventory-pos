@@ -68,9 +68,15 @@ Legend:
 - [x] T046 Expense report
 
 ## Hardening
-- [ ] T047 Audit trail
-- [ ] T048 Validation/authorization review
-- [ ] T049 Database/index optimization
-- [ ] T050 Critical workflow test suite
-- [ ] T051 UI/UX polish
-- [ ] T052 Deployment documentation
+- [x] T047 Audit trail
+- [x] T048 Validation/authorization review
+- [x] T049 Database/index optimization
+- [x] T050 Critical workflow test suite
+- [x] T051 UI/UX polish
+- [x] T052 Deployment documentation
+
+## Docker / Git / Deployment
+- [x] T053 Docker development environment
+- [x] T054 Docker production environment
+- [x] T055 Git/commit/release workflow
+- [x] T056 Production deployment verification

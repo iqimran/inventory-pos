@@ -54,7 +54,7 @@ export function PrintPage({ title, paper, pageMargin = '0', autoPrint = false, a
     useEffect(() => {
         if (!autoPrint || printed.current || (roll && rollHeightMm === null)) return;
         printed.current = true;
-        // Let images (logo, barcodes) decode before the print dialog snapshots the page.
+        // Let images (barcodes) decode before the print dialog snapshots the page.
         const timer = window.setTimeout(() => window.print(), 300);
 
         return () => window.clearTimeout(timer);

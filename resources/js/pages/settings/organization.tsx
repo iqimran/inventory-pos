@@ -70,7 +70,7 @@ export default function OrganizationSettings({ organization }: { organization: O
                 <div className="space-y-6">
                     <HeadingSmall
                         title="Organization"
-                        description="Shown in the sidebar, on the login page and browser tab, and at the top of printed invoices."
+                        description="Name, address and contact number print at the top of receipts and invoices. The logo appears in the sidebar, on the login page and as the browser tab icon — not on printed documents."
                     />
 
                     <form onSubmit={submit} className="space-y-6">
@@ -84,13 +84,13 @@ export default function OrganizationSettings({ organization }: { organization: O
                                         <ImageUp className="text-muted-foreground size-6" />
                                     )}
                                 </div>
-                                <div className="space-y-2">
+                                <div className="min-w-0 flex-1 space-y-2">
                                     <input
                                         ref={fileInput}
                                         id="logo"
                                         type="file"
                                         accept="image/png,image/jpeg,image/webp"
-                                        className="block text-sm file:mr-3 file:rounded-md file:border file:bg-transparent file:px-3 file:py-1.5 file:text-sm"
+                                        className="block w-full max-w-full text-sm file:mr-3 file:rounded-md file:border file:bg-transparent file:px-3 file:py-1.5 file:text-sm"
                                         onChange={(e) => {
                                             setData((current) => ({ ...current, logo: e.target.files?.[0] ?? null, remove_logo: false }));
                                         }}
@@ -159,7 +159,6 @@ export default function OrganizationSettings({ organization }: { organization: O
                         </div>
 
                         <div className="rounded-md border p-4 text-center font-mono text-xs" aria-label="Invoice header preview">
-                            {logo && <img src={logo} alt="" className="mx-auto mb-1 max-h-14 max-w-40 object-contain" />}
                             <div className="text-sm font-bold">{data.name || 'Organization name'}</div>
                             {data.address && <div className="whitespace-pre-line">{data.address}</div>}
                             {data.phone && <div>Tel: {data.phone}</div>}
