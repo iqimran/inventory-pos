@@ -18,6 +18,7 @@ use App\Models\Unit;
 use App\Models\User;
 use App\Policies\CatalogPolicy;
 use App\Support\Database\BlueprintMacros;
+use App\Support\OrganizationProfile;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\DB;
@@ -33,6 +34,9 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         BlueprintMacros::register();
+
+        // One instance per request, so shared props, the root view and pages read the settings once.
+        $this->app->scoped(OrganizationProfile::class);
     }
 
     /**

@@ -9,6 +9,7 @@ use App\Http\Requests\Service\ServiceInvoiceRequest;
 use App\Http\Resources\ServiceInvoiceResource;
 use App\Models\ServiceInvoice;
 use App\Models\ServiceJob;
+use App\Support\OrganizationProfile;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -61,6 +62,25 @@ class ServiceInvoiceController extends Controller
                 'allocations.payment',
                 'creator:id,name',
             ])),
+        ]);
+    }
+
+    /**
+     * Printable customer copy: parts and service charges in separate sections.
+     */
+    public function print(ServiceInvoice $serviceInvoice, OrganizationProfile $organization): Response
+    {
+        Gate::authorize('view', $serviceInvoice);
+
+        return Inertia::render('service/invoices/print', [
+            'invoice' => new ServiceInvoiceResource($serviceInvoice->load([
+                'party',
+                'serviceJob.device',
+                'items' => fn ($query) => $query->with('product:id,sku')->orderBy('id'),
+                'allocations.payment',
+                'creator:id,name',
+            ])),
+            'shop' => $organization->details(),
         ]);
     }
 }

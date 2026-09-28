@@ -6,7 +6,7 @@ import { Printer } from 'lucide-react';
 
 interface ShowSaleReturnProps {
     saleReturn: { data: SaleReturn };
-    shop: { name: string; address: string | null; phone: string | null };
+    shop: { name: string; address: string | null; phone: string | null; logo_url: string | null };
 }
 
 /**
@@ -43,8 +43,9 @@ export default function ShowSaleReturn({ saleReturn: { data: saleReturn }, shop 
 
             <article className="mx-auto w-full max-w-[80mm] bg-white p-4 font-mono text-[12px] leading-snug text-black shadow print:max-w-none print:p-0 print:shadow-none">
                 <header className="text-center">
+                    {shop.logo_url && <img src={shop.logo_url} alt="" className="mx-auto mb-1 max-h-16 max-w-[50mm] object-contain" />}
                     <h1 className="text-base font-bold">{shop.name}</h1>
-                    {shop.address && <p>{shop.address}</p>}
+                    {shop.address && <p className="whitespace-pre-line">{shop.address}</p>}
                     {shop.phone && <p>Tel: {shop.phone}</p>}
                     <p className="mt-1 font-bold">SALE RETURN</p>
                 </header>

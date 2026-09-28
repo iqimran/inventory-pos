@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Settings\OrganizationController;
 use App\Http\Controllers\Settings\PasswordController;
 use App\Http\Controllers\Settings\ProfileController;
 use Illuminate\Support\Facades\Route;
@@ -17,4 +18,7 @@ Route::middleware('auth')->group(function () {
     Route::get('settings/appearance', function () {
         return Inertia::render('settings/appearance');
     })->name('appearance');
+
+    Route::get('settings/organization', [OrganizationController::class, 'edit'])->name('organization.edit');
+    Route::put('settings/organization', [OrganizationController::class, 'update'])->name('organization.update');
 });

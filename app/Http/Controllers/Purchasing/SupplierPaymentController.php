@@ -14,6 +14,7 @@ use App\Models\Party;
 use App\Models\Payment;
 use App\Models\Purchase;
 use App\Support\Money;
+use App\Support\OrganizationProfile;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -121,6 +122,19 @@ class SupplierPaymentController extends Controller
 
         return Inertia::render('supplier-payments/show', [
             'payment' => new PaymentResource($payment->load(['party', 'allocations.allocatable', 'creator:id,name'])),
+        ]);
+    }
+
+    /**
+     * Printable payment voucher with the organization header.
+     */
+    public function print(Payment $payment, OrganizationProfile $organization): Response
+    {
+        Gate::authorize('view', $payment);
+
+        return Inertia::render('supplier-payments/print', [
+            'payment' => new PaymentResource($payment->load(['party', 'allocations.allocatable', 'creator:id,name'])),
+            'shop' => $organization->details(),
         ]);
     }
 }

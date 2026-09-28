@@ -125,6 +125,7 @@ export interface ServiceInvoice {
         status_label: string;
         complaint: string;
         diagnosis: string | null;
+        received_at: string;
         device: Device | null;
     };
     items?: ServiceInvoiceLine[];

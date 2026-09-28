@@ -46,6 +46,7 @@ class ServiceInvoiceResource extends JsonResource
                 'status_label' => $this->serviceJob->status->label(),
                 'complaint' => $this->serviceJob->complaint,
                 'diagnosis' => $this->serviceJob->diagnosis,
+                'received_at' => $this->serviceJob->received_at->toIso8601String(),
                 'device' => $this->serviceJob->relationLoaded('device') ? new DeviceResource($this->serviceJob->device) : null,
             ]),
             'items' => $this->whenLoaded('items', fn () => $this->items->map(fn ($item) => array_merge([

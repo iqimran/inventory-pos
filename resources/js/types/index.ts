@@ -29,8 +29,15 @@ export interface FlashMessages {
     status?: string | null;
 }
 
-export interface SharedData {
+export interface Organization {
     name: string;
+    logo_url: string | null;
+}
+
+export interface SharedData {
+    /** Organization name (Settings → Organization). */
+    name: string;
+    organization: Organization;
     auth: Auth;
     flash: FlashMessages;
     [key: string]: unknown;

@@ -68,12 +68,13 @@ export default function ServiceInvoicesIndex({ invoices, filters }: InvoicesInde
                                 <th className="px-4 py-3 text-right font-medium">Total</th>
                                 <th className="px-4 py-3 text-right font-medium">Due</th>
                                 <th className="px-4 py-3 font-medium">Status</th>
+                                <th className="px-4 py-3" />
                             </tr>
                         </thead>
                         <tbody>
                             {invoices.data.length === 0 && (
                                 <tr>
-                                    <td colSpan={7} className="text-muted-foreground px-4 py-8 text-center">
+                                    <td colSpan={8} className="text-muted-foreground px-4 py-8 text-center">
                                         No service invoices found.
                                     </td>
                                 </tr>
@@ -95,6 +96,11 @@ export default function ServiceInvoicesIndex({ invoices, filters }: InvoicesInde
                                     <td className="px-4 py-3 text-right font-medium tabular-nums">{formatMoney(invoice.due_amount)}</td>
                                     <td className="px-4 py-3">
                                         <PaymentStatusBadge status={invoice.payment_status} label={invoice.payment_status_label} />
+                                    </td>
+                                    <td className="px-4 py-3 text-right">
+                                        <Button variant="ghost" size="sm" asChild>
+                                            <Link href={route('service-invoices.print', invoice.id)}>Print</Link>
+                                        </Button>
                                     </td>
                                 </tr>
                             ))}

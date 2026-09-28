@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\BrandingController;
 use App\Http\Controllers\Catalog\BrandController;
 use App\Http\Controllers\Catalog\CategoryController;
 use App\Http\Controllers\Catalog\ProductController;
@@ -29,6 +30,9 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::redirect('/', '/dashboard')->name('home');
+
+// Public: shown on the login page and as the browser tab icon.
+Route::get('branding/logo', [BrandingController::class, 'logo'])->name('branding.logo');
 
 Route::middleware(['auth'])->group(function () {
     Route::get('dashboard', function () {
@@ -75,6 +79,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('supplier-payments', [SupplierPaymentController::class, 'storePayment'])->name('supplier-payments.store');
     Route::post('supplier-advances', [SupplierPaymentController::class, 'storeAdvance'])->name('supplier-advances.store');
     Route::get('supplier-payments/{payment}', [SupplierPaymentController::class, 'show'])->name('supplier-payments.show');
+    Route::get('supplier-payments/{payment}/print', [SupplierPaymentController::class, 'print'])->name('supplier-payments.print');
 
     // POS counter and its JSON lookups (session-authenticated, used while scanning).
     Route::prefix('pos')->name('pos.')->group(function () {
@@ -125,6 +130,7 @@ Route::middleware(['auth'])->group(function () {
 
         Route::get('invoices', [ServiceInvoiceController::class, 'index'])->name('service-invoices.index');
         Route::get('invoices/{serviceInvoice}', [ServiceInvoiceController::class, 'show'])->name('service-invoices.show');
+        Route::get('invoices/{serviceInvoice}/print', [ServiceInvoiceController::class, 'print'])->name('service-invoices.print');
     });
 });
 

@@ -161,6 +161,43 @@ class ServicePagesTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page->has('invoice.data.cost_total')->has('invoice.data.items.0.unit_cost'));
     }
 
+    public function test_printable_invoice_separates_parts_and_service_charges()
+    {
+        config(['shop.name' => 'IQ Mobile', 'shop.phone' => '01700000000', 'shop.receipt_footer' => 'Warranty 30 days']);
+        $job = $this->invoicedJob();
+        $invoice = ServiceInvoice::sole();
+
+        $this->actingAs($this->technician)->get("/service/invoices/{$invoice->id}/print")
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('service/invoices/print')
+                ->where('shop.name', 'IQ Mobile')
+                ->where('shop.phone', '01700000000')
+                ->where('shop.receipt_footer', 'Warranty 30 days')
+                ->where('invoice.data.invoice_no', $invoice->invoice_no)
+                ->where('invoice.data.job.job_no', $job->job_no)
+                ->has('invoice.data.job.received_at')
+                ->where('invoice.data.job.complaint', 'No charging')
+                ->where('invoice.data.job.device.imei1', self::IMEI_A)
+                ->where('invoice.data.party.name', 'Rahim')
+                ->has('invoice.data.items', 2)
+                ->where('invoice.data.items.0.line_type', 'PRODUCT')
+                ->where('invoice.data.items.0.description', 'Charging IC')
+                ->where('invoice.data.items.0.line_subtotal', '800.00')
+                ->where('invoice.data.items.1.line_type', 'SERVICE')
+                ->where('invoice.data.items.1.line_subtotal', '500.00')
+                ->where('invoice.data.product_total', '800.00')
+                ->where('invoice.data.service_total', '500.00')
+                ->where('invoice.data.total', '1300.00')
+                ->where('invoice.data.paid_amount', '1000.00')
+                ->where('invoice.data.due_amount', '300.00')
+                ->has('invoice.data.allocations', 1)
+                ->missing('invoice.data.items.0.unit_cost')); // customer copy never shows cost
+
+        $outsider = User::factory()->create();
+        $this->actingAs($outsider)->get("/service/invoices/{$invoice->id}/print")->assertForbidden();
+    }
+
     public function test_invoice_index()
     {
         $this->invoicedJob();

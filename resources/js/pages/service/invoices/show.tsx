@@ -7,6 +7,7 @@ import { useCan } from '@/hooks/use-can';
 import AppLayout from '@/layouts/app-layout';
 import { formatDateTime, formatMoney, toCents } from '@/lib/format';
 import { Head, Link } from '@inertiajs/react';
+import { Printer } from 'lucide-react';
 
 /**
  * Combined service invoice: PRODUCT lines (parts) and SERVICE lines (labour) with separate revenue totals.
@@ -60,13 +61,20 @@ export default function ShowServiceInvoice({ invoice: { data: invoice } }: { inv
                             </p>
                         )}
                     </div>
-                    {can('sales.collect') && toCents(invoice.due_amount) > 0 && invoice.party && (
-                        <Button variant="secondary" asChild>
-                            <Link href={route('customer-payments.create', { party_id: invoice.party.id, service_invoice_id: invoice.id })}>
-                                Collect due
+                    <div className="flex flex-wrap gap-2">
+                        <Button asChild>
+                            <Link href={route('service-invoices.print', invoice.id)}>
+                                <Printer className="size-4" /> Print invoice
                             </Link>
                         </Button>
-                    )}
+                        {can('sales.collect') && toCents(invoice.due_amount) > 0 && invoice.party && (
+                            <Button variant="secondary" asChild>
+                                <Link href={route('customer-payments.create', { party_id: invoice.party.id, service_invoice_id: invoice.id })}>
+                                    Collect due
+                                </Link>
+                            </Button>
+                        )}
+                    </div>
                 </div>
 
                 <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">

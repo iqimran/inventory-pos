@@ -10,6 +10,7 @@ use App\Http\Resources\SaleResource;
 use App\Http\Resources\SaleReturnResource;
 use App\Models\Sale;
 use App\Models\SaleReturn;
+use App\Support\OrganizationProfile;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
@@ -53,13 +54,13 @@ class SaleReturnController extends Controller
         return to_route('sale-returns.show', $return)->with('success', "Return {$return->return_no} recorded.");
     }
 
-    public function show(SaleReturn $saleReturn): Response
+    public function show(SaleReturn $saleReturn, OrganizationProfile $organization): Response
     {
         Gate::authorize('viewAny', Sale::class);
 
         return Inertia::render('sales/returns/show', [
             'saleReturn' => new SaleReturnResource($saleReturn->load(['sale:id,invoice_no', 'party', 'items.product:id,name,sku', 'creator:id,name'])),
-            'shop' => ['name' => config('shop.name'), 'address' => config('shop.address'), 'phone' => config('shop.phone')],
+            'shop' => $organization->details(),
         ]);
     }
 }

@@ -14,7 +14,7 @@ import AppLayout from '@/layouts/app-layout';
 import { formatDateTime, formatMoney, fromCents, toCents } from '@/lib/format';
 import { getJson } from '@/lib/http';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
-import { Lock, Search, Trash2 } from 'lucide-react';
+import { Lock, Printer, Search, Trash2 } from 'lucide-react';
 import { FormEventHandler, useEffect, useRef, useState } from 'react';
 
 interface ShowJobProps {
@@ -116,6 +116,11 @@ export default function ShowServiceJob({ job: { data: job }, technicians, method
                                             <PaymentStatusBadge status={job.invoice.payment_status} label={job.invoice.payment_status_label} />
                                         </div>
                                         <Row label="Due" value={formatMoney(job.invoice.due_amount)} strong />
+                                        <Button size="sm" className="w-full" asChild>
+                                            <Link href={route('service-invoices.print', job.invoice.id)}>
+                                                <Printer className="size-4" /> Print invoice
+                                            </Link>
+                                        </Button>
                                         {can('sales.collect') && toCents(job.invoice.due_amount) > 0 && job.party && (
                                             <Button variant="secondary" size="sm" className="w-full" asChild>
                                                 <Link

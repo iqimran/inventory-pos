@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Sales\SaleRequest;
 use App\Http\Resources\SaleResource;
 use App\Models\Sale;
+use App\Support\OrganizationProfile;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -82,18 +83,13 @@ class SaleController extends Controller
     /**
      * Printable customer sale slip.
      */
-    public function receipt(Request $request, Sale $sale): Response
+    public function receipt(Request $request, Sale $sale, OrganizationProfile $organization): Response
     {
         Gate::authorize('view', $sale);
 
         return Inertia::render('sales/receipt', [
             'sale' => new SaleResource($sale->load(['party', 'items.product:id,name,sku', 'allocations.payment', 'creator:id,name'])),
-            'shop' => [
-                'name' => config('shop.name'),
-                'address' => config('shop.address'),
-                'phone' => config('shop.phone'),
-                'receipt_footer' => config('shop.receipt_footer'),
-            ],
+            'shop' => $organization->details(),
             'justCompleted' => $request->boolean('new'),
         ]);
     }

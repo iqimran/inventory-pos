@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\OrganizationProfile;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -36,10 +37,13 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         $user = $request->user();
+        $branding = app(OrganizationProfile::class)->branding();
 
         return [
             ...parent::share($request),
-            'name' => config('app.name'),
+            // Organization name and logo from Settings → Organization (sidebar, login page, tab title and icon).
+            'name' => $branding['name'],
+            'organization' => $branding,
             'auth' => [
                 'user' => $user ? [
                     'id' => $user->id,

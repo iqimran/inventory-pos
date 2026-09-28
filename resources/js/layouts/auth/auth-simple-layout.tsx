@@ -1,6 +1,7 @@
-import AppLogoIcon from '@/components/app-logo-icon';
 import { FlashMessages } from '@/components/flash-messages';
-import { Link } from '@inertiajs/react';
+import { OrganizationLogo } from '@/components/organization-logo';
+import { type SharedData } from '@/types';
+import { Link, usePage } from '@inertiajs/react';
 
 interface AuthLayoutProps {
     children: React.ReactNode;
@@ -10,6 +11,8 @@ interface AuthLayoutProps {
 }
 
 export default function AuthSimpleLayout({ children, title, description }: AuthLayoutProps) {
+    const { name } = usePage<SharedData>().props;
+
     return (
         <div className="bg-background flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
             <FlashMessages />
@@ -17,10 +20,13 @@ export default function AuthSimpleLayout({ children, title, description }: AuthL
                 <div className="flex flex-col gap-8">
                     <div className="flex flex-col items-center gap-4">
                         <Link href={route('login')} className="flex flex-col items-center gap-2 font-medium">
-                            <div className="mb-1 flex h-9 w-9 items-center justify-center rounded-md">
-                                <AppLogoIcon className="size-9 fill-current text-[var(--foreground)] dark:text-white" />
+                            <div className="mb-1 flex h-16 max-w-48 items-center justify-center">
+                                <OrganizationLogo
+                                    className="h-16 w-auto max-w-48"
+                                    fallbackClassName="size-9 text-[var(--foreground)] dark:text-white"
+                                />
                             </div>
-                            <span className="sr-only">{title}</span>
+                            <span className="text-lg font-semibold">{name}</span>
                         </Link>
 
                         <div className="space-y-2 text-center">

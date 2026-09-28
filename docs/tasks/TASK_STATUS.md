@@ -55,7 +55,7 @@ Legend:
 - [ ] T035 Barcode generation
 - [ ] T036 Barcode label printing
 - [ ] T037 POS receipt printing
-- [ ] T038 Service invoice printing
+- [x] T038 Service invoice printing
 
 ## Reports
 - [ ] T039 Dashboard
