@@ -81,7 +81,7 @@ class ServiceInvoiceController extends Controller
                 'allocations.payment',
                 'creator:id,name',
             ])),
-            'shop' => $organization->details(),
+            'shop' => $organization->documentHeader(),
             'invoiceBarcode' => $barcodes->dataUri($serviceInvoice->invoice_no, 40),
             'autoPrint' => $request->boolean('print'),
         ]);

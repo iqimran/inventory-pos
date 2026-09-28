@@ -70,7 +70,7 @@ export default function OrganizationSettings({ organization }: { organization: O
                 <div className="space-y-6">
                     <HeadingSmall
                         title="Organization"
-                        description="Shown in the sidebar, on the login page and browser tab, and at the top of printed invoices."
+                        description="Name, address and contact number print at the top of receipts and invoices. The logo appears in the sidebar, on the login page and as the browser tab icon — not on printed documents."
                     />
 
                     <form onSubmit={submit} className="space-y-6">
@@ -159,7 +159,6 @@ export default function OrganizationSettings({ organization }: { organization: O
                         </div>
 
                         <div className="rounded-md border p-4 text-center font-mono text-xs" aria-label="Invoice header preview">
-                            {logo && <img src={logo} alt="" className="mx-auto mb-1 max-h-14 max-w-40 object-contain" />}
                             <div className="text-sm font-bold">{data.name || 'Organization name'}</div>
                             {data.address && <div className="whitespace-pre-line">{data.address}</div>}
                             {data.phone && <div>Tel: {data.phone}</div>}

@@ -93,7 +93,7 @@ class SaleController extends Controller
 
         return Inertia::render('sales/receipt', [
             'sale' => new SaleResource($sale->load(['party', 'items.product:id,name,sku', 'allocations.payment', 'creator:id,name'])),
-            'shop' => $organization->details(),
+            'shop' => $organization->documentHeader(),
             // Scannable invoice number (e.g. to find the sale for a return).
             'invoiceBarcode' => $barcodes->dataUri($sale->invoice_no, 40),
             'autoPrint' => $request->boolean('print'),

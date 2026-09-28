@@ -11,8 +11,8 @@ use Illuminate\Support\Str;
 
 /**
  * The organization's branding: name, address, contact number and invoice footer printed at the
- * top of sale and service invoices, plus one logo used for the sidebar, login page, browser tab
- * icon and printed documents.
+ * top of sale and service invoices, plus one logo used for the sidebar, login page and browser tab
+ * icon (not on printed documents).
  *
  * Values saved from Settings → Organization win; until a value is saved, the SHOP_* environment
  * values (config/shop.php) are used, so existing installs keep printing what they printed before.
@@ -51,6 +51,17 @@ class OrganizationProfile
         $details['logo_url'] = $this->logoUrl();
 
         return $details;
+    }
+
+    /**
+     * Header for printed documents (receipts, slips, invoices, vouchers): name, address, contact
+     * number and footer. The logo is deliberately left off printed documents.
+     *
+     * @return array{name: string, address: ?string, phone: ?string, receipt_footer: ?string}
+     */
+    public function documentHeader(): array
+    {
+        return array_diff_key($this->details(), ['logo_url' => true]);
     }
 
     /**
