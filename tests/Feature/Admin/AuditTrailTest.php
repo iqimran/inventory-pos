@@ -112,7 +112,8 @@ class AuditTrailTest extends TestCase
         ])->assertSessionHasNoErrors();
 
         $log = $this->last('sale.price_overridden');
-        $this->assertSame([['product_id' => $product->id, 'quantity' => 1, 'list_price' => '300.00', 'unit_price' => '250.00']], $log->new_values['lines']);
+        // assertEquals: MySQL's JSON type does not preserve object key order.
+        $this->assertEquals([['product_id' => $product->id, 'quantity' => 1, 'list_price' => '300.00', 'unit_price' => '250.00']], $log->new_values['lines']);
 
         $customer = Party::factory()->customer()->create();
         $this->post('/service/jobs', ['party_id' => $customer->id, 'device' => ['brand' => 'X', 'model' => 'Y'], 'complaint' => 'x'])->assertSessionHasNoErrors();

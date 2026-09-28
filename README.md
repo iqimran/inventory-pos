@@ -52,7 +52,7 @@ npm run lint && npx tsc --noEmit && npm run format:check
 ```
 
 To run the suite against MySQL, create `mobile_shop_pos_testing` and run
-`DB_CONNECTION=mysql DB_DATABASE=mobile_shop_pos_testing php artisan test`.
+`php artisan test --configuration=phpunit.mysql.xml` (it always uses that `_testing` database).
 
 ### Conventions
 
