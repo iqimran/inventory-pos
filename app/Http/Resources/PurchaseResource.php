@@ -54,13 +54,15 @@ class PurchaseResource extends JsonResource
             'allocations' => $this->whenLoaded('allocations', fn () => $this->allocations->map(fn ($allocation) => [
                 'id' => $allocation->id,
                 'amount' => $allocation->amount,
-                'payment' => [
+                'created_at' => $allocation->created_at?->toIso8601String(),
+                // Null when settled from the supplier's opening-balance advance.
+                'payment' => $allocation->payment ? [
                     'id' => $allocation->payment->id,
                     'payment_no' => $allocation->payment->payment_no,
                     'purpose_label' => $allocation->payment->purpose->label(),
                     'method_label' => $allocation->payment->method->label(),
                     'paid_at' => $allocation->payment->paid_at->toIso8601String(),
-                ],
+                ] : null,
             ])),
             'created_by' => $this->whenLoaded('creator', fn () => $this->creator?->name),
             'created_at' => $this->created_at?->toIso8601String(),
