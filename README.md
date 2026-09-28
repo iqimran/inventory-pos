@@ -141,3 +141,17 @@ To run the suite against MySQL, create `mobile_shop_pos_testing` and run
 - Permissions: `service.view` to see jobs, devices and invoices; `service.manage` to open/update jobs,
   change status, edit parts/charges and invoice; part prices other than retail need `sales.price_override`.
   Technicians are active users who hold `service.manage` (or Admin).
+
+### Expense rules
+
+- Expense types (Rent, Electricity, Salary…) are master data; `db:seed --class=ExpenseTypeSeeder` adds the
+  common ones. A type that has expenses cannot be deleted — deactivate it instead.
+- Expenses (`EXP-YYYYMM-000001`, numbered by the expense's month) record type, amount, date (not in the
+  future), payment method, reference and notes.
+- Expenses are never deleted. A mistake is **voided** with a reason: the record stays visible, marked void,
+  and is excluded from every total. Voided expenses cannot be edited.
+- Every create, edit (field-by-field before → after) and void is written to `expense_audits`.
+- Expense report: totals for a date range by expense type (with share) and by day or month; voided
+  expenses are excluded.
+- Permissions: `expenses.view` (lists, report), `expenses.manage` (record/edit, types), `expenses.void`
+  (void). Re-run `php artisan db:seed --class=RolesAndPermissionsSeeder` on existing installs.

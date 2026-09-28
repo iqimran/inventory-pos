@@ -50,6 +50,7 @@ enum Permission: string
     // Expenses
     case ExpensesView = 'expenses.view';
     case ExpensesManage = 'expenses.manage';
+    case ExpensesVoid = 'expenses.void';
 
     // Barcode & reports
     case BarcodesPrint = 'barcodes.print';
@@ -87,6 +88,7 @@ enum Permission: string
             self::ServiceManage => 'Manage service jobs',
             self::ExpensesView => 'View expenses',
             self::ExpensesManage => 'Manage expenses',
+            self::ExpensesVoid => 'Void expenses',
             self::BarcodesPrint => 'Print barcodes',
             self::ReportsView => 'View reports',
         };
@@ -103,7 +105,7 @@ enum Permission: string
             self::SalesView, self::SalesCreate, self::SalesVoid, self::SalesPriceOverride, self::SalesCollect,
             self::ReturnsCreate => 'Sales & Returns',
             self::ServiceView, self::ServiceManage => 'Mobile Service',
-            self::ExpensesView, self::ExpensesManage => 'Expenses',
+            self::ExpensesView, self::ExpensesManage, self::ExpensesVoid => 'Expenses',
             self::BarcodesPrint, self::ReportsView => 'Barcode & Reports',
         };
     }

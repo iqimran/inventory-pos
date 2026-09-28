@@ -8,6 +8,9 @@ use App\Http\Controllers\Catalog\CategoryController;
 use App\Http\Controllers\Catalog\ProductController;
 use App\Http\Controllers\Catalog\SubcategoryController;
 use App\Http\Controllers\Catalog\UnitController;
+use App\Http\Controllers\Expenses\ExpenseController;
+use App\Http\Controllers\Expenses\ExpenseReportController;
+use App\Http\Controllers\Expenses\ExpenseTypeController;
 use App\Http\Controllers\Inventory\LowStockController;
 use App\Http\Controllers\Inventory\StockAdjustmentController;
 use App\Http\Controllers\Inventory\StockMovementController;
@@ -104,6 +107,12 @@ Route::middleware(['auth'])->group(function () {
     Route::get('customer-payments/create', [CustomerPaymentController::class, 'create'])->name('customer-payments.create');
     Route::post('customer-payments', [CustomerPaymentController::class, 'store'])->name('customer-payments.store');
     Route::get('customer-payments/{payment}', [CustomerPaymentController::class, 'show'])->name('customer-payments.show');
+
+    // Expenses are never deleted: mistakes are voided (kept for audit, excluded from totals).
+    Route::get('expenses/report', [ExpenseReportController::class, 'index'])->name('expenses.report');
+    Route::resource('expense-types', ExpenseTypeController::class)->only(['index', 'store', 'update', 'destroy'])->parameters(['expense-types' => 'expenseType']);
+    Route::resource('expenses', ExpenseController::class)->except(['destroy']);
+    Route::post('expenses/{expense}/void', [ExpenseController::class, 'void'])->name('expenses.void');
 
     // Mobile service. Jobs are never deleted (cancelled instead); invoices are immutable.
     Route::prefix('service')->group(function () {

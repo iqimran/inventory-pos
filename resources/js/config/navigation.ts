@@ -2,6 +2,7 @@ import { type NavGroup } from '@/types';
 import {
     ArrowLeftRight,
     Banknote,
+    BarChart3,
     Boxes,
     ClipboardList,
     Contact,
@@ -17,9 +18,11 @@ import {
     ShoppingCart,
     Smartphone,
     Tag,
+    Tags,
     TriangleAlert,
     Undo2,
     Users,
+    Wallet,
     Wrench,
 } from 'lucide-react';
 
@@ -47,6 +50,14 @@ export const navigation: NavGroup[] = [
             { title: 'Service jobs', url: '/service/jobs', icon: Wrench, permission: 'service.view' },
             { title: 'Devices', url: '/service/devices', icon: Smartphone, permission: 'service.view' },
             { title: 'Service invoices', url: '/service/invoices', icon: FileText, permission: 'service.view' },
+        ],
+    },
+    {
+        title: 'Expenses',
+        items: [
+            { title: 'Expenses', url: '/expenses', icon: Wallet, permission: 'expenses.view' },
+            { title: 'Expense types', url: '/expense-types', icon: Tags, permission: 'expenses.view' },
+            { title: 'Expense report', url: '/expenses/report', icon: BarChart3, permission: 'expenses.view' },
         ],
     },
     {

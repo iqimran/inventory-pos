@@ -47,9 +47,9 @@ Legend:
 - [x] T031 Service payment/due
 
 ## Expenses
-- [ ] T032 Expense types
-- [ ] T033 Expenses
-- [ ] T034 Expense reports
+- [x] T032 Expense types
+- [x] T033 Expenses
+- [x] T034 Expense reports
 
 ## Barcode/printing
 - [ ] T035 Barcode generation

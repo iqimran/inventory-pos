@@ -47,6 +47,8 @@ interface MasterDataPageProps<T extends MasterRecord> {
     fields: FieldDef[];
     extraFilters?: ReactNode;
     extraQuery?: Record<string, unknown>;
+    /** Permission needed to create/edit/delete (defaults to catalogue management). */
+    managePermission?: string;
 }
 
 type FormData = Record<string, string | boolean>;
@@ -62,9 +64,10 @@ export function MasterDataPage<T extends MasterRecord>({
     fields,
     extraFilters,
     extraQuery = {},
+    managePermission = 'products.manage',
 }: MasterDataPageProps<T>) {
     const can = useCan();
-    const canManage = can('products.manage');
+    const canManage = can(managePermission);
     const { errors: pageErrors } = usePage().props as { errors: Record<string, string> };
     const [search, setSearch] = useState(initialSearch);
     const [editing, setEditing] = useState<T | null>(null);
