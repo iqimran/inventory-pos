@@ -72,6 +72,12 @@ T050 Critical workflow test suite
 T051 UI/UX polish
 T052 Deployment documentation
 
+## Phase 9 — Docker / Git / Deployment
+T053 Docker development environment
+T054 Docker production environment
+T055 Git/commit/release workflow
+T056 Production deployment verification
+
 ## Session rule
 For each task:
 - Read CLAUDE.md.
