@@ -108,7 +108,7 @@ class OrganizationProfile
         $before = array_intersect_key($this->details(), array_flip(self::FIELDS));
         $newLogo = $logo?->storeAs('branding', 'logo-'.Str::random(16).'.'.$logo->extension(), self::DISK);
 
-        DB::transaction(function () use ($details, $newLogo, $removeLogo): void {
+        DB::transaction(function () use ($details, $newLogo, $removeLogo, $before, $previousLogo): void {
             foreach (self::FIELDS as $key => $field) {
                 Setting::updateOrCreate(['key' => $key], ['value' => $details[$field] ?? null, 'updated_by' => Auth::id()]);
             }
@@ -116,17 +116,18 @@ class OrganizationProfile
             if ($newLogo || $removeLogo) {
                 Setting::updateOrCreate(['key' => self::LOGO_KEY], ['value' => $newLogo ?: null, 'updated_by' => Auth::id()]);
             }
+
+            // Audited in the same transaction as the change.
+            $this->saved = null;
+            $after = array_intersect_key($this->details(), array_flip(self::FIELDS));
+
+            if ($newLogo || ($removeLogo && $previousLogo)) {
+                $before['logo'] = $previousLogo ? 'set' : null;
+                $after['logo'] = $newLogo ? 'replaced' : null;
+            }
+
+            app(AuditTrail::class)->recordChanges('settings.organization_updated', null, $before, $after);
         });
-
-        $this->saved = null;
-        $after = array_intersect_key($this->details(), array_flip(self::FIELDS));
-
-        if ($newLogo || ($removeLogo && $previousLogo)) {
-            $before['logo'] = $previousLogo ? 'set' : null;
-            $after['logo'] = $newLogo ? 'replaced' : null;
-        }
-
-        app(AuditTrail::class)->recordChanges('settings.organization_updated', null, $before, $after);
 
         // Replaced or removed files are deleted only after the new settings are committed.
         if ($previousLogo && ($newLogo || $removeLogo)) {
