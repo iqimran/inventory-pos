@@ -52,9 +52,9 @@ Legend:
 - [x] T034 Expense reports
 
 ## Barcode/printing
-- [ ] T035 Barcode generation
-- [ ] T036 Barcode label printing
-- [ ] T037 POS receipt printing
+- [x] T035 Barcode generation
+- [x] T036 Barcode label printing
+- [x] T037 POS receipt printing
 - [x] T038 Service invoice printing
 
 ## Reports

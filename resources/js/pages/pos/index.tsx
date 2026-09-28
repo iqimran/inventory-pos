@@ -31,6 +31,22 @@ interface PosProps {
 }
 
 const listPrice = (product: PosProduct, mode: Mode) => (mode === 'RETAIL' ? product.retail_price : product.wholesale_price);
+// Remembered per counter (browser); storage may be unavailable in private mode.
+const AUTO_PRINT_KEY = 'pos.autoPrintReceipt';
+const readAutoPrint = () => {
+    try {
+        return window.localStorage.getItem(AUTO_PRINT_KEY) === '1';
+    } catch {
+        return false;
+    }
+};
+const writeAutoPrint = (value: boolean) => {
+    try {
+        window.localStorage.setItem(AUTO_PRINT_KEY, value ? '1' : '0');
+    } catch {
+        // ignore
+    }
+};
 const qty = (line: CartLine) => Math.max(Number.parseInt(line.quantity, 10) || 0, 0);
 const lineNetCents = (line: CartLine) => Math.max(toCents(line.unitPrice) * qty(line) - toCents(line.discount), 0);
 
@@ -44,6 +60,7 @@ export default function Pos({ mode: initialMode, methods, canOverridePrice }: Po
     const [tendered, setTendered] = useState('');
     const [method, setMethod] = useState('CASH');
     const [notes, setNotes] = useState('');
+    const [autoPrint, setAutoPrint] = useState(readAutoPrint);
     const [scan, setScan] = useState('');
     const [results, setResults] = useState<PosProduct[]>([]);
     const [message, setMessage] = useState<string | null>(null);
@@ -157,6 +174,7 @@ export default function Pos({ mode: initialMode, methods, canOverridePrice }: Po
                 payment_method: method,
                 tendered_amount: tendered,
                 notes,
+                auto_print: autoPrint,
             },
             { onFinish: () => setSubmitting(false) },
         );
@@ -474,6 +492,18 @@ export default function Pos({ mode: initialMode, methods, canOverridePrice }: Po
                     </div>
 
                     <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Note (optional)" aria-label="Note" />
+
+                    <label className="flex items-center gap-2 text-sm">
+                        <input
+                            type="checkbox"
+                            checked={autoPrint}
+                            onChange={(e) => {
+                                setAutoPrint(e.target.checked);
+                                writeAutoPrint(e.target.checked);
+                            }}
+                        />
+                        Print receipt after sale
+                    </label>
 
                     <InputError message={errors.quantity} />
                     <InputError message={errors.items} />

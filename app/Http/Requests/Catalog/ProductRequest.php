@@ -58,7 +58,24 @@ class ProductRequest extends CatalogRequest
             'wholesale_price' => $money,
             'reorder_level' => ['required', 'integer', 'min:0', 'max:1000000'],
             'is_active' => ['required', 'boolean'],
+            // Assign an internal barcode when the barcode field is left empty.
+            'generate_barcode' => ['sometimes', 'boolean'],
         ];
+    }
+
+    /**
+     * Product attributes only (without form options such as generate_barcode).
+     *
+     * @return array<string, mixed>
+     */
+    public function productData(): array
+    {
+        return $this->safe()->except('generate_barcode');
+    }
+
+    public function wantsGeneratedBarcode(): bool
+    {
+        return $this->boolean('generate_barcode') && $this->validated('barcode') === null;
     }
 
     public function messages(): array

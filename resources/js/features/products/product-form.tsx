@@ -36,6 +36,7 @@ export function ProductForm({ product, options }: { product?: Product; options: 
         wholesale_price: product?.wholesale_price ?? '0.00',
         reorder_level: String(product?.reorder_level ?? 0),
         is_active: product?.is_active ?? true,
+        generate_barcode: false as boolean,
     });
 
     const subcategories = options.subcategories.filter((subcategory) => String(subcategory.category_id) === data.category_id);
@@ -61,6 +62,12 @@ export function ProductForm({ product, options }: { product?: Product; options: 
                 </Field>
                 <Field id="barcode" label="Barcode" error={errors.barcode} hint="Optional, must be unique. Scan it into this field.">
                     <Input id="barcode" value={data.barcode} onChange={(e) => setData('barcode', e.target.value)} autoComplete="off" />
+                    {data.barcode.trim() === '' && (
+                        <label className="mt-1 flex items-center gap-2 text-xs">
+                            <input type="checkbox" checked={data.generate_barcode} onChange={(e) => setData('generate_barcode', e.target.checked)} />
+                            Generate an internal Code 128 barcode on save
+                        </label>
+                    )}
                 </Field>
                 <Field id="unit_id" label="Unit" error={errors.unit_id}>
                     <select id="unit_id" className={selectClass} value={data.unit_id} onChange={(e) => setData('unit_id', e.target.value)} required>

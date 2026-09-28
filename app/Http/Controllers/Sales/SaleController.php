@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Sales;
 
 use App\Actions\Sales\CreateSale;
+use App\Domain\Barcode\BarcodeRenderer;
 use App\Enums\PaymentStatus;
 use App\Enums\SaleType;
 use App\Http\Controllers\Controller;
@@ -62,7 +63,10 @@ class SaleController extends Controller
     {
         $sale = $createSale->handle($request->saleData(), $request->user()->can('overridePrice', Sale::class));
 
-        return to_route('sales.receipt', ['sale' => $sale, 'new' => 1])->with('success', "Sale {$sale->invoice_no} completed.");
+        // The POS may ask for the receipt's print dialog to open straight away.
+        $query = array_filter(['sale' => $sale, 'new' => 1, 'print' => $request->boolean('auto_print') ? 1 : null]);
+
+        return to_route('sales.receipt', $query)->with('success', "Sale {$sale->invoice_no} completed.");
     }
 
     public function show(Sale $sale): Response
@@ -83,13 +87,16 @@ class SaleController extends Controller
     /**
      * Printable customer sale slip.
      */
-    public function receipt(Request $request, Sale $sale, OrganizationProfile $organization): Response
+    public function receipt(Request $request, Sale $sale, OrganizationProfile $organization, BarcodeRenderer $barcodes): Response
     {
         Gate::authorize('view', $sale);
 
         return Inertia::render('sales/receipt', [
             'sale' => new SaleResource($sale->load(['party', 'items.product:id,name,sku', 'allocations.payment', 'creator:id,name'])),
             'shop' => $organization->details(),
+            // Scannable invoice number (e.g. to find the sale for a return).
+            'invoiceBarcode' => $barcodes->dataUri($sale->invoice_no, 40),
+            'autoPrint' => $request->boolean('print'),
             'justCompleted' => $request->boolean('new'),
         ]);
     }

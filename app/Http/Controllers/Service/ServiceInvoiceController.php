@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Service;
 
 use App\Actions\MobileService\CreateServiceInvoice;
+use App\Domain\Barcode\BarcodeRenderer;
 use App\Enums\PaymentStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Service\ServiceInvoiceRequest;
@@ -68,7 +69,7 @@ class ServiceInvoiceController extends Controller
     /**
      * Printable customer copy: parts and service charges in separate sections.
      */
-    public function print(ServiceInvoice $serviceInvoice, OrganizationProfile $organization): Response
+    public function print(Request $request, ServiceInvoice $serviceInvoice, OrganizationProfile $organization, BarcodeRenderer $barcodes): Response
     {
         Gate::authorize('view', $serviceInvoice);
 
@@ -81,6 +82,8 @@ class ServiceInvoiceController extends Controller
                 'creator:id,name',
             ])),
             'shop' => $organization->details(),
+            'invoiceBarcode' => $barcodes->dataUri($serviceInvoice->invoice_no, 40),
+            'autoPrint' => $request->boolean('print'),
         ]);
     }
 }

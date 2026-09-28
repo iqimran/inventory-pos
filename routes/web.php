@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Barcodes\BarcodeLabelController;
+use App\Http\Controllers\Barcodes\ProductBarcodeController;
 use App\Http\Controllers\BrandingController;
 use App\Http\Controllers\Catalog\BrandController;
 use App\Http\Controllers\Catalog\CategoryController;
@@ -58,6 +60,11 @@ Route::middleware(['auth'])->group(function () {
     });
 
     Route::resource('products', ProductController::class);
+    Route::post('products/{product}/barcode', [ProductBarcodeController::class, 'store'])->name('products.barcode.store');
+
+    // Barcode labels: builder, then the printable sheet (GET so the print page can be reloaded/re-printed).
+    Route::get('barcodes/labels', [BarcodeLabelController::class, 'create'])->name('barcodes.labels');
+    Route::get('barcodes/labels/print', [BarcodeLabelController::class, 'print'])->name('barcodes.labels.print');
 
     Route::prefix('inventory')->name('inventory.')->group(function () {
         Route::get('movements', [StockMovementController::class, 'index'])->name('movements.index');

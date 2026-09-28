@@ -38,8 +38,9 @@ class PosController extends Controller
 
     public function products(Request $request, ProductSearch $search): JsonResponse
     {
-        // Used by the POS and by service jobs (parts).
-        abort_unless($request->user()->can('create', Sale::class) || $request->user()->can(Permission::ServiceManage->value), 403);
+        // Used by the POS, service jobs (parts) and the barcode label builder.
+        abort_unless($request->user()->can('create', Sale::class) || $request->user()->can(Permission::ServiceManage->value)
+            || $request->user()->can(Permission::BarcodesPrint->value), 403);
 
         $term = trim((string) $request->query('q', ''));
 
@@ -50,9 +51,11 @@ class PosController extends Controller
         return response()->json(['data' => $products->map(fn (Product $product) => $this->productPayload($product))->values()]);
     }
 
-    public function lookup(string $code, ProductSearch $search): JsonResponse
+    public function lookup(Request $request, string $code, ProductSearch $search): JsonResponse
     {
-        Gate::authorize('create', Sale::class);
+        // Scanner lookup for the POS, service parts and barcode labels.
+        abort_unless($request->user()->can('create', Sale::class) || $request->user()->can(Permission::ServiceManage->value)
+            || $request->user()->can(Permission::BarcodesPrint->value), 403);
 
         $product = $search->findByCode($code);
 

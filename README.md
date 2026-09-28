@@ -155,3 +155,21 @@ To run the suite against MySQL, create `mobile_shop_pos_testing` and run
   expenses are excluded.
 - Permissions: `expenses.view` (lists, report), `expenses.manage` (record/edit, types), `expenses.void`
   (void). Re-run `php artisan db:seed --class=RolesAndPermissionsSeeder` on existing installs.
+
+### Barcodes & printing
+
+- Barcodes are rendered as **Code 128** SVG on the server by `App\Domain\Barcode\BarcodeRenderer`, using
+  [`picqer/php-barcode-generator`](https://github.com/picqer/php-barcode-generator) — **LGPL-3.0-or-later**,
+  used unmodified as a Composer dependency. Code 128 encodes any printable ASCII, so existing barcodes keep working.
+- Products without a barcode can get an internal one (product page → *Generate barcode*, or the option on the
+  product form): 12 digits `20` + zero-padded product id, in the GS1 in-store range so it never clashes with
+  manufacturer EAN/UPC codes. Existing barcodes are never replaced.
+- Labels (*Catalog → Barcode labels*, `barcodes.print`): choose products and quantities (single or bulk), label
+  stock (38×25 or 50×30 mm roll, or A4 3×7 sticker sheet), price (retail / wholesale / none), SKU and shop name.
+  Print at 100% scale with no margins.
+- Print templates live in `resources/js/pages/**` with shared chrome in `resources/js/features/printing`
+  (paper size, toolbar, auto-print, organization header); they only lay out data prepared by the server.
+- POS receipt and service invoice print on 80 mm or 58 mm rolls (toggle remembered per browser) as one slip sized
+  to the content, with a scannable invoice-number barcode. The POS option *Print receipt after sale* opens the print
+  dialog automatically. Service invoices print PARTS / PRODUCTS and SERVICE / LABOR in separately ruled sections,
+  each line tagged `[P]` / `[S]`.

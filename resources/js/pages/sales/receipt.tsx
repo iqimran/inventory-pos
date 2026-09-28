@@ -1,23 +1,31 @@
 import { Button } from '@/components/ui/button';
+import { BarcodeImage } from '@/features/printing/barcode-image';
+import { Divider, DocumentHeader, type PrintShop } from '@/features/printing/document-header';
+import { PrintPage } from '@/features/printing/print-page';
+import { usePaperWidth } from '@/features/printing/use-paper-width';
 import { SaleTotals } from '@/features/sales/receipt-lines';
 import { type Sale } from '@/features/sales/types';
 import { useCan } from '@/hooks/use-can';
 import { formatMoney, toCents } from '@/lib/format';
-import { Head, Link } from '@inertiajs/react';
-import { Printer } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Link } from '@inertiajs/react';
 import { useEffect } from 'react';
 
 interface ReceiptProps {
     sale: { data: Sale };
-    shop: { name: string; address: string | null; phone: string | null; receipt_footer: string | null; logo_url: string | null };
+    shop: PrintShop;
+    invoiceBarcode: string;
+    autoPrint: boolean;
     justCompleted: boolean;
 }
 
 /**
- * Customer sale slip, laid out for 80mm thermal paper but readable on any printer or screen.
+ * Customer sale slip for 80 mm or 58 mm thermal paper (readable on any printer or screen).
  */
-export default function SaleReceipt({ sale: { data: sale }, shop, justCompleted }: ReceiptProps) {
+export default function SaleReceipt({ sale: { data: sale }, shop, invoiceBarcode, autoPrint, justCompleted }: ReceiptProps) {
     const can = useCan();
+    const paper = usePaperWidth();
+    const itemCount = sale.items?.reduce((sum, item) => sum + item.quantity, 0) ?? 0;
 
     // After completing a sale, pressing Enter or F2 starts the next one.
     useEffect(() => {
@@ -35,33 +43,36 @@ export default function SaleReceipt({ sale: { data: sale }, shop, justCompleted 
     }, [justCompleted, sale.sale_type]);
 
     return (
-        <div className="bg-muted/40 min-h-svh py-6 print:bg-white print:py-0">
-            <Head title={`Receipt ${sale.invoice_no}`} />
-
-            <div className="mx-auto mb-4 flex w-full max-w-[80mm] flex-wrap justify-center gap-2 px-2 print:hidden">
-                <Button onClick={() => window.print()}>
-                    <Printer className="size-4" /> Print
-                </Button>
-                {can('sales.create') && (
-                    <Button variant="secondary" asChild>
-                        <Link href={route('pos.index', { mode: sale.sale_type })}>New sale</Link>
+        <PrintPage
+            title={`Receipt ${sale.invoice_no}`}
+            paper={{ roll: paper.width }}
+            autoPrint={autoPrint}
+            className={paper.maxWidthClass}
+            actions={
+                <>
+                    {can('sales.create') && (
+                        <Button variant="secondary" asChild>
+                            <Link href={route('pos.index', { mode: sale.sale_type })}>New sale</Link>
+                        </Button>
+                    )}
+                    <Button variant="outline" asChild>
+                        <Link href={route('sales.show', sale.id)}>Details</Link>
                     </Button>
+                    {paper.toggle}
+                </>
+            }
+            hint={justCompleted ? 'Press Enter or F2 for the next sale.' : undefined}
+        >
+            <article
+                className={cn(
+                    'mx-auto w-full bg-white p-4 font-mono leading-snug text-black shadow print:px-[3mm] print:py-[2mm] print:shadow-none',
+                    paper.maxWidthClass,
+                    paper.textClass,
                 )}
-                <Button variant="outline" asChild>
-                    <Link href={route('sales.show', sale.id)}>Details</Link>
-                </Button>
-                {justCompleted && <p className="text-muted-foreground w-full text-center text-xs">Press Enter or F2 for the next sale.</p>}
-            </div>
+            >
+                <DocumentHeader shop={shop} />
 
-            <article className="mx-auto w-full max-w-[80mm] bg-white p-4 font-mono text-[12px] leading-snug text-black shadow print:max-w-none print:p-0 print:shadow-none">
-                <header className="text-center">
-                    {shop.logo_url && <img src={shop.logo_url} alt="" className="mx-auto mb-1 max-h-16 max-w-[50mm] object-contain" />}
-                    <h1 className="text-base font-bold">{shop.name}</h1>
-                    {shop.address && <p className="whitespace-pre-line">{shop.address}</p>}
-                    {shop.phone && <p>Tel: {shop.phone}</p>}
-                </header>
-
-                <div className="my-2 border-t border-dashed border-black" />
+                <Divider />
 
                 <dl className="space-y-0.5">
                     <div className="flex justify-between">
@@ -76,7 +87,7 @@ export default function SaleReceipt({ sale: { data: sale }, shop, justCompleted 
                         <dt>Type</dt>
                         <dd>{sale.sale_type_label}</dd>
                     </div>
-                    <div className="flex justify-between">
+                    <div className="flex justify-between gap-2">
                         <dt>Customer</dt>
                         <dd className="text-right">
                             {sale.party ? `${sale.party.name}${sale.party.phone ? ` (${sale.party.phone})` : ''}` : 'Walk-in'}
@@ -90,7 +101,7 @@ export default function SaleReceipt({ sale: { data: sale }, shop, justCompleted 
                     )}
                 </dl>
 
-                <div className="my-2 border-t border-dashed border-black" />
+                <Divider />
 
                 <table className="w-full">
                     <thead>
@@ -104,6 +115,7 @@ export default function SaleReceipt({ sale: { data: sale }, shop, justCompleted 
                             <tr key={item.id} className="align-top">
                                 <td className="py-0.5 pr-2">
                                     <div>{item.product?.name}</div>
+                                    {item.product?.sku && <div className="text-[0.85em]">{item.product.sku}</div>}
                                     <div>
                                         {item.quantity} × {formatMoney(item.unit_price)}
                                     </div>
@@ -114,10 +126,11 @@ export default function SaleReceipt({ sale: { data: sale }, shop, justCompleted 
                         ))}
                     </tbody>
                 </table>
+                <p className="mt-1 text-right">Items: {itemCount}</p>
 
-                <div className="my-2 border-t border-dashed border-black" />
+                <Divider />
 
-                <div className="[&_dl]:text-[12px]">
+                <div className="[&_dl]:text-[1em]">
                     <SaleTotals sale={sale} />
                 </div>
 
@@ -127,10 +140,12 @@ export default function SaleReceipt({ sale: { data: sale }, shop, justCompleted 
                     </p>
                 )}
 
-                <div className="my-2 border-t border-dashed border-black" />
+                <Divider />
 
-                {shop.receipt_footer && <p className="text-center">{shop.receipt_footer}</p>}
+                <BarcodeImage src={invoiceBarcode} value={sale.invoice_no} className="mx-auto h-10 max-w-[60mm]" />
+
+                {shop.receipt_footer && <p className="mt-2 text-center">{shop.receipt_footer}</p>}
             </article>
-        </div>
+        </PrintPage>
     );
 }

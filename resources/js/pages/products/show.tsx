@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MovementTable } from '@/features/inventory/movement-table';
+import { BarcodeImage } from '@/features/printing/barcode-image';
 import { StockBadge } from '@/features/products/stock-badge';
 import { type Product, type StockMovement } from '@/features/products/types';
 import { useCan } from '@/hooks/use-can';
@@ -12,14 +13,16 @@ import AppLayout from '@/layouts/app-layout';
 import { formatMoney } from '@/lib/format';
 import { type Paginated } from '@/types';
 import { Head, Link, router, usePage } from '@inertiajs/react';
+import { Printer } from 'lucide-react';
 import { useState } from 'react';
 
 interface ShowProductProps {
     product: { data: Product };
     movements: Paginated<StockMovement>;
+    barcodeImage: string | null;
 }
 
-export default function ShowProduct({ product: { data: product }, movements }: ShowProductProps) {
+export default function ShowProduct({ product: { data: product }, movements, barcodeImage }: ShowProductProps) {
     const can = useCan();
     const { errors } = usePage().props as { errors: Record<string, string> };
     const [confirmDelete, setConfirmDelete] = useState(false);
@@ -102,14 +105,45 @@ export default function ShowProduct({ product: { data: product }, movements }: S
                     </Card>
                 </div>
 
-                <dl className="grid gap-4 rounded-lg border p-4 text-sm sm:grid-cols-2 lg:grid-cols-3">
-                    {details.map(([label, value]) => (
-                        <div key={label}>
-                            <dt className="text-muted-foreground">{label}</dt>
-                            <dd className="font-medium">{value}</dd>
+                <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_300px]">
+                    <dl className="grid gap-4 rounded-lg border p-4 text-sm sm:grid-cols-2 lg:grid-cols-3">
+                        {details.map(([label, value]) => (
+                            <div key={label}>
+                                <dt className="text-muted-foreground">{label}</dt>
+                                <dd className="font-medium">{value}</dd>
+                            </div>
+                        ))}
+                    </dl>
+
+                    <div className="space-y-3 rounded-lg border p-4 text-sm">
+                        <h3 className="font-medium">Barcode (Code 128)</h3>
+                        {barcodeImage && product.barcode ? (
+                            <div className="rounded bg-white p-3">
+                                <BarcodeImage src={barcodeImage} value={product.barcode} className="h-14" />
+                            </div>
+                        ) : (
+                            <p className="text-muted-foreground">No barcode yet.</p>
+                        )}
+                        <div className="flex flex-wrap gap-2">
+                            {!product.barcode && can('products.manage') && (
+                                <Button
+                                    size="sm"
+                                    onClick={() => router.post(route('products.barcode.store', product.id), {}, { preserveScroll: true })}
+                                >
+                                    Generate barcode
+                                </Button>
+                            )}
+                            {product.barcode && can('barcodes.print') && (
+                                <Button size="sm" variant="outline" asChild>
+                                    <Link href={route('barcodes.labels', { products: [product.id] })}>
+                                        <Printer className="size-4" /> Print labels
+                                    </Link>
+                                </Button>
+                            )}
                         </div>
-                    ))}
-                </dl>
+                        <InputError message={errors.barcode} />
+                    </div>
+                </div>
 
                 <section className="space-y-3">
                     <h3 className="font-medium">Stock history</h3>

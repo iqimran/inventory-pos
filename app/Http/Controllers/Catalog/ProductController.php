@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers\Catalog;
 
+use App\Actions\Products\AssignProductBarcode;
 use App\Actions\Products\DeleteProduct;
 use App\Actions\Products\SaveProduct;
+use App\Domain\Barcode\BarcodeRenderer;
 use App\Domain\Inventory\ProductSearch;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Catalog\ProductRequest;
@@ -40,14 +42,18 @@ class ProductController extends Controller
         return Inertia::render('products/create', ['options' => $this->formOptions()]);
     }
 
-    public function store(ProductRequest $request, SaveProduct $saveProduct): RedirectResponse
+    public function store(ProductRequest $request, SaveProduct $saveProduct, AssignProductBarcode $assignBarcode): RedirectResponse
     {
-        $product = $saveProduct->handle(null, $request->validated());
+        $product = $saveProduct->handle(null, $request->productData());
+
+        if ($request->wantsGeneratedBarcode()) {
+            $assignBarcode->handle($product);
+        }
 
         return to_route('products.show', $product)->with('success', "Product {$product->name} created.");
     }
 
-    public function show(Product $product): Response
+    public function show(Product $product, BarcodeRenderer $barcodes): Response
     {
         Gate::authorize('view', $product);
 
@@ -55,6 +61,7 @@ class ProductController extends Controller
 
         return Inertia::render('products/show', [
             'product' => new ProductResource($product),
+            'barcodeImage' => $barcodes->tryDataUri($product->barcode),
             'movements' => fn () => StockMovementResource::collection(
                 $product->stockMovements()->with('creator:id,name')->latest('id')->paginate(20)->withQueryString()
             ),
@@ -71,9 +78,13 @@ class ProductController extends Controller
         ]);
     }
 
-    public function update(ProductRequest $request, Product $product, SaveProduct $saveProduct): RedirectResponse
+    public function update(ProductRequest $request, Product $product, SaveProduct $saveProduct, AssignProductBarcode $assignBarcode): RedirectResponse
     {
-        $saveProduct->handle($product, $request->validated());
+        $saveProduct->handle($product, $request->productData());
+
+        if ($request->wantsGeneratedBarcode()) {
+            $assignBarcode->handle($product);
+        }
 
         return to_route('products.show', $product)->with('success', "Product {$product->name} updated.");
     }

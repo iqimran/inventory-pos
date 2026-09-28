@@ -3,6 +3,7 @@ import {
     ArrowLeftRight,
     Banknote,
     BarChart3,
+    Barcode,
     Boxes,
     ClipboardList,
     Contact,
@@ -68,6 +69,7 @@ export const navigation: NavGroup[] = [
             { title: 'Subcategories', url: '/catalog/subcategories', icon: Boxes, permission: 'products.view' },
             { title: 'Brands', url: '/catalog/brands', icon: Tag, permission: 'products.view' },
             { title: 'Units', url: '/catalog/units', icon: Ruler, permission: 'products.view' },
+            { title: 'Barcode labels', url: '/barcodes/labels', icon: Barcode, permission: 'barcodes.print' },
         ],
     },
     {
