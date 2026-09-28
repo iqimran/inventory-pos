@@ -15,8 +15,10 @@ use App\Models\User;
 use App\Support\Money;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Testing\TestResponse;
+use PHPUnit\Framework\Attributes\Group;
 use Tests\TestCase;
 
+#[Group('critical')]
 class SaleReturnTest extends TestCase
 {
     use RefreshDatabase;

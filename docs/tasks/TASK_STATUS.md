@@ -71,7 +71,7 @@ Legend:
 - [x] T047 Audit trail
 - [x] T048 Validation/authorization review
 - [x] T049 Database/index optimization
-- [ ] T050 Critical workflow test suite
+- [x] T050 Critical workflow test suite
 - [ ] T051 UI/UX polish
 - [ ] T052 Deployment documentation
 

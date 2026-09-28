@@ -9,6 +9,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Route as RouteDefinition;
 use Illuminate\Support\Facades\Route;
+use PHPUnit\Framework\Attributes\Group;
 use Tests\TestCase;
 
 /**
@@ -17,6 +18,7 @@ use Tests\TestCase;
  * A signed-in user without any permission must be refused (403) everywhere except the
  * self-service routes below. A new route that forgets its authorization check fails here.
  */
+#[Group('critical')]
 class RouteAuthorizationTest extends TestCase
 {
     use RefreshDatabase;

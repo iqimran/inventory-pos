@@ -17,12 +17,14 @@ use App\Models\StockMovement;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use LogicException;
+use PHPUnit\Framework\Attributes\Group;
 use Tests\Feature\Service\Concerns\BuildsServiceJobs;
 use Tests\TestCase;
 
 /**
  * T030 — combined service invoice: PRODUCT lines (parts, stock out) + SERVICE lines (labour, no stock).
  */
+#[Group('critical')]
 class ServiceInvoiceTest extends TestCase
 {
     use BuildsServiceJobs, RefreshDatabase;

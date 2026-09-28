@@ -13,8 +13,10 @@ use App\Models\StockMovement;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Testing\TestResponse;
+use PHPUnit\Framework\Attributes\Group;
 use Tests\TestCase;
 
+#[Group('critical')]
 class PurchaseWorkflowTest extends TestCase
 {
     use RefreshDatabase;

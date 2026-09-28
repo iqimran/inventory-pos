@@ -19,11 +19,13 @@ use App\Models\ServiceInvoice;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
+use PHPUnit\Framework\Attributes\Group;
 use Tests\TestCase;
 
 /**
  * T041–T043: PRODUCT, SERVICE and combined revenue — including the critical combined service invoice.
  */
+#[Group('critical')]
 class RevenueReportTest extends TestCase
 {
     use RefreshDatabase;
