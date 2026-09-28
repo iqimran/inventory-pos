@@ -21,6 +21,11 @@ use App\Http\Controllers\Parties\PartyLedgerAdjustmentController;
 use App\Http\Controllers\Purchasing\PurchaseController;
 use App\Http\Controllers\Purchasing\PurchaseReturnController;
 use App\Http\Controllers\Purchasing\SupplierPaymentController;
+use App\Http\Controllers\Reports\DashboardController;
+use App\Http\Controllers\Reports\PartyReportController;
+use App\Http\Controllers\Reports\RevenueReportController;
+use App\Http\Controllers\Reports\SalesReportController;
+use App\Http\Controllers\Reports\StockReportController;
 use App\Http\Controllers\Sales\CustomerPaymentController;
 use App\Http\Controllers\Sales\PosController;
 use App\Http\Controllers\Sales\SaleController;
@@ -32,7 +37,6 @@ use App\Http\Controllers\Service\ServiceJobController;
 use App\Http\Controllers\Service\ServiceJobPartController;
 use App\Http\Controllers\Service\ServiceJobStatusController;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
 
 Route::redirect('/', '/dashboard')->name('home');
 
@@ -40,9 +44,17 @@ Route::redirect('/', '/dashboard')->name('home');
 Route::get('branding/logo', [BrandingController::class, 'logo'])->name('branding.logo');
 
 Route::middleware(['auth'])->group(function () {
-    Route::get('dashboard', function () {
-        return Inertia::render('dashboard');
-    })->name('dashboard');
+    Route::get('dashboard', DashboardController::class)->name('dashboard');
+
+    // Reports (reports.view). All revenue figures come from App\Domain\Reporting\RevenueReport.
+    Route::prefix('reports')->name('reports.')->group(function () {
+        Route::get('sales', SalesReportController::class)->name('sales');
+        Route::get('product-revenue', [RevenueReportController::class, 'product'])->name('product-revenue');
+        Route::get('service-revenue', [RevenueReportController::class, 'service'])->name('service-revenue');
+        Route::get('revenue', [RevenueReportController::class, 'combined'])->name('revenue');
+        Route::get('stock', StockReportController::class)->name('stock');
+        Route::get('parties', PartyReportController::class)->name('parties');
+    });
 
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::resource('users', UserController::class)->except(['show', 'destroy']);

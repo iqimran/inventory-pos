@@ -173,3 +173,18 @@ To run the suite against MySQL, create `mobile_shop_pos_testing` and run
   to the content, with a scannable invoice-number barcode. The POS option *Print receipt after sale* opens the print
   dialog automatically. Service invoices print PARTS / PRODUCTS and SERVICE / LABOR in separately ruled sections,
   each line tagged `[P]` / `[S]`.
+
+### Reports & dashboard
+
+- `reports.view` unlocks the dashboard KPIs and *Reports*: sales (daily/monthly quantity and amount + invoice
+  list), product revenue, mobile service revenue, combined revenue, stock, party ledger and expenses. Cost and
+  profit figures additionally require `purchases.view`. Detailed lists are paginated; everything is aggregated in SQL.
+- Revenue comes from invoice **lines** (`App\Domain\Reporting\RevenueReport`, shared by the dashboard and all
+  revenue reports): **product** = POS sale lines + service-invoice PRODUCT lines − sale returns; **service** =
+  service-invoice SERVICE lines; **combined** = product + service. A service invoice with parts and labour is split
+  between the two and counted once. Line amounts are net of discounts; returns count on the day goods came back.
+  The combined report also re-derives the total from document totals and shows whether they match.
+- Set `REPORT_TIMEZONE` (e.g. `Asia/Dhaka`) so days and months follow local time; transactions are stored in
+  `APP_TIMEZONE` (UTC) and converted inside the SQL. Fixed offset per period (no daylight-saving adjustment).
+- Party report columns (signed, + = the party owes the shop more): transactions (sales, service invoices,
+  purchases), payments (incl. refunds and advances), returns, adjustments (opening balances, manual adjustments).

@@ -58,14 +58,14 @@ Legend:
 - [x] T038 Service invoice printing
 
 ## Reports
-- [ ] T039 Dashboard
-- [ ] T040 Daily/monthly sales
-- [ ] T041 Product revenue
-- [ ] T042 Mobile service revenue
-- [ ] T043 Combined revenue
-- [ ] T044 Stock report
-- [ ] T045 Party ledger report
-- [ ] T046 Expense report
+- [x] T039 Dashboard
+- [x] T040 Daily/monthly sales
+- [x] T041 Product revenue
+- [x] T042 Mobile service revenue
+- [x] T043 Combined revenue
+- [x] T044 Stock report
+- [x] T045 Party ledger report
+- [x] T046 Expense report
 
 ## Hardening
 - [ ] T047 Audit trail

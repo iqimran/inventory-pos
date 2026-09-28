@@ -1,10 +1,14 @@
 import Heading from '@/components/heading';
+import { Pagination } from '@/components/pagination';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { type Expense } from '@/features/expenses/types';
+import { ReportNav } from '@/features/reports/report-nav';
+import { useCan } from '@/hooks/use-can';
 import AppLayout from '@/layouts/app-layout';
 import { formatMoney } from '@/lib/format';
-import { type Option } from '@/types';
+import { type Option, type Paginated } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
 import { FormEventHandler, useState } from 'react';
 
@@ -20,11 +24,13 @@ interface ExpenseReportProps {
     };
     types: Option[];
     filters: { expense_type_id: number | string };
+    expenses: Paginated<Expense>;
 }
 
 const selectClass = 'border-input bg-background h-9 rounded-md border px-3 text-sm';
 
-export default function ExpenseReport({ report, types, filters }: ExpenseReportProps) {
+export default function ExpenseReport({ report, types, filters, expenses }: ExpenseReportProps) {
+    const can = useCan();
     const [form, setForm] = useState({
         from: report.from,
         to: report.to,
@@ -52,6 +58,7 @@ export default function ExpenseReport({ report, types, filters }: ExpenseReportP
         >
             <Head title="Expense report" />
             <div className="space-y-6 p-4 md:p-6">
+                {can('reports.view') && <ReportNav current="expenses.report" range={{ from: report.from, to: report.to }} />}
                 <Heading title="Expense report" description="Totals by expense type and by date. Voided expenses are excluded." />
 
                 <form onSubmit={apply} className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
@@ -198,6 +205,48 @@ export default function ExpenseReport({ report, types, filters }: ExpenseReportP
                         </div>
                     </section>
                 </div>
+
+                <section className="space-y-2">
+                    <h3 className="font-medium">Expenses</h3>
+                    <div className="overflow-x-auto rounded-lg border">
+                        <table className="w-full text-sm">
+                            <thead className="bg-muted/50 text-left">
+                                <tr>
+                                    <th className="px-4 py-2 font-medium">Date</th>
+                                    <th className="px-4 py-2 font-medium">Expense</th>
+                                    <th className="px-4 py-2 font-medium">Type</th>
+                                    <th className="px-4 py-2 font-medium">Method</th>
+                                    <th className="px-4 py-2 font-medium">Reference</th>
+                                    <th className="px-4 py-2 text-right font-medium">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {expenses.data.length === 0 && (
+                                    <tr>
+                                        <td colSpan={6} className="text-muted-foreground px-4 py-6 text-center">
+                                            No expenses in this period.
+                                        </td>
+                                    </tr>
+                                )}
+                                {expenses.data.map((expense) => (
+                                    <tr key={expense.id} className="border-t">
+                                        <td className="px-4 py-2 tabular-nums">{expense.expense_date}</td>
+                                        <td className="px-4 py-2">
+                                            <Link href={route('expenses.show', expense.id)} className="font-mono hover:underline">
+                                                {expense.expense_no}
+                                            </Link>
+                                        </td>
+                                        <td className="px-4 py-2">{expense.type?.name}</td>
+                                        <td className="px-4 py-2">{expense.payment_method_label}</td>
+                                        <td className="px-4 py-2">{expense.reference ?? '—'}</td>
+                                        <td className="px-4 py-2 text-right tabular-nums">{formatMoney(expense.amount)}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                    <Pagination meta={expenses.meta} />
+                </section>
             </div>
         </AppLayout>
     );
