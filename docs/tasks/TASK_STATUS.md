@@ -78,5 +78,5 @@ Legend:
 ## Docker / Git / Deployment
 - [x] T053 Docker development environment
 - [x] T054 Docker production environment
-- [ ] T055 Git/commit/release workflow
+- [x] T055 Git/commit/release workflow
 - [ ] T056 Production deployment verification
