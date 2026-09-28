@@ -136,12 +136,15 @@ export default function ServiceRevenue({ filters, totals, periods, technicians, 
                                 <tr key={line.id} className="border-t">
                                     <td className={`${td} whitespace-nowrap`}>{formatDateTime(line.invoiced_at)}</td>
                                     <td className={td}>
-                                        <Link href={route('service-invoices.show', line.invoice_id)} className="font-mono hover:underline">
+                                        <Link
+                                            href={route('service-invoices.show', line.invoice_id)}
+                                            className="font-mono whitespace-nowrap hover:underline"
+                                        >
                                             {line.invoice_no}
                                         </Link>
                                     </td>
                                     <td className={td}>
-                                        <Link href={route('service-jobs.show', line.job_id)} className="font-mono hover:underline">
+                                        <Link href={route('service-jobs.show', line.job_id)} className="font-mono whitespace-nowrap hover:underline">
                                             {line.job_no}
                                         </Link>
                                     </td>

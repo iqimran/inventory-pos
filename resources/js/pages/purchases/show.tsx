@@ -154,7 +154,10 @@ export default function ShowPurchase({
                                 {purchase.allocations?.map((allocation) => (
                                     <li key={allocation.id} className="flex justify-between gap-4 px-4 py-2">
                                         <span>
-                                            <Link href={route('supplier-payments.show', allocation.payment.id)} className="font-mono hover:underline">
+                                            <Link
+                                                href={route('supplier-payments.show', allocation.payment.id)}
+                                                className="font-mono whitespace-nowrap hover:underline"
+                                            >
                                                 {allocation.payment.payment_no}
                                             </Link>
                                             <span className="text-muted-foreground ml-2 text-xs">

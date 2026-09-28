@@ -137,7 +137,7 @@ export default function SalesReport({ filters, totals, periods, invoices }: Sale
                                 <tr key={sale.id} className="border-t">
                                     <td className={`${td} whitespace-nowrap`}>{formatDateTime(sale.sold_at)}</td>
                                     <td className={td}>
-                                        <Link href={route('sales.show', sale.id)} className="font-mono hover:underline">
+                                        <Link href={route('sales.show', sale.id)} className="font-mono whitespace-nowrap hover:underline">
                                             {sale.invoice_no}
                                         </Link>
                                     </td>

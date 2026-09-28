@@ -110,7 +110,10 @@ export default function ShowServiceJob({ job: { data: job }, technicians, method
                                 {job.invoice && (
                                     <div className="space-y-2 border-t pt-2">
                                         <div className="flex items-center justify-between">
-                                            <Link href={route('service-invoices.show', job.invoice.id)} className="font-mono hover:underline">
+                                            <Link
+                                                href={route('service-invoices.show', job.invoice.id)}
+                                                className="font-mono whitespace-nowrap hover:underline"
+                                            >
                                                 {job.invoice.invoice_no}
                                             </Link>
                                             <PaymentStatusBadge status={job.invoice.payment_status} label={job.invoice.payment_status_label} />

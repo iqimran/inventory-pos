@@ -53,7 +53,7 @@ export default function PurchaseReturnsIndex({ returns }: { returns: Paginator<R
                                         </div>
                                     </td>
                                     <td className="px-4 py-3">
-                                        <Link href={route('purchases.show', row.purchase.id)} className="font-mono hover:underline">
+                                        <Link href={route('purchases.show', row.purchase.id)} className="font-mono whitespace-nowrap hover:underline">
                                             {row.purchase.purchase_no}
                                         </Link>
                                     </td>
