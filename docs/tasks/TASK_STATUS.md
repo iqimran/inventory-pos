@@ -69,7 +69,7 @@ Legend:
 
 ## Hardening
 - [x] T047 Audit trail
-- [ ] T048 Validation/authorization review
+- [x] T048 Validation/authorization review
 - [ ] T049 Database/index optimization
 - [ ] T050 Critical workflow test suite
 - [ ] T051 UI/UX polish
