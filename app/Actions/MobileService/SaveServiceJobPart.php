@@ -2,6 +2,7 @@
 
 namespace App\Actions\MobileService;
 
+use App\Domain\Audit\AuditTrail;
 use App\Domain\MobileService\ServiceJobGuard;
 use App\Models\Product;
 use App\Models\ServiceJob;
@@ -19,7 +20,7 @@ use Illuminate\Validation\ValidationException;
  */
 class SaveServiceJobPart
 {
-    public function __construct(private readonly ServiceJobGuard $guard) {}
+    public function __construct(private readonly ServiceJobGuard $guard, private readonly AuditTrail $audit) {}
 
     /**
      * @param  array{product_id?: int, quantity: int, unit_price?: ?string}  $data
@@ -65,15 +66,21 @@ class SaveServiceJobPart
 
             if ($item) {
                 $item->update($attributes);
-
-                return $item;
+            } else {
+                $item = $job->items()->create([
+                    'product_id' => $product->id,
+                    'list_price' => $listPrice,
+                    ...$attributes,
+                ]);
             }
 
-            return $job->items()->create([
-                'product_id' => $product->id,
-                'list_price' => $listPrice,
-                ...$attributes,
-            ]);
+            if ($overridden && Money::cmp($unitPrice, $current) !== 0) {
+                $this->audit->record('service_part.price_overridden', $job, ['unit_price' => $current], [
+                    'product_id' => $item->product_id, 'list_price' => $listPrice, 'unit_price' => $unitPrice,
+                ], $job->job_no);
+            }
+
+            return $item;
         }, 3);
     }
 }

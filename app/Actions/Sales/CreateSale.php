@@ -2,6 +2,7 @@
 
 namespace App\Actions\Sales;
 
+use App\Domain\Audit\AuditTrail;
 use App\Domain\Inventory\Data\StockMovementData;
 use App\Domain\Inventory\StockService;
 use App\Domain\PartyLedger\PartyLedgerService;
@@ -38,6 +39,7 @@ class CreateSale
         private readonly SaleCalculator $calculator,
         private readonly SaleSettlement $settlement,
         private readonly DocumentNumberGenerator $numbers,
+        private readonly AuditTrail $audit,
     ) {}
 
     /**
@@ -126,6 +128,13 @@ class CreateSale
             }
 
             $sale->forceFill(['cost_total' => $costTotal])->save();
+
+            $overrides = array_values(array_filter($lines, fn (array $line) => $line['price_overridden']));
+            if ($overrides !== []) {
+                $this->audit->record('sale.price_overridden', $sale, new: ['lines' => array_map(fn (array $line) => [
+                    'product_id' => $line['product_id'], 'quantity' => $line['quantity'], 'list_price' => $line['list_price'], 'unit_price' => $line['unit_price'],
+                ], $overrides)], description: $sale->invoice_no);
+            }
 
             if ($party && Money::isPositive($totals['total'])) {
                 $this->ledger->debit($party, LedgerEntryType::Sale, $totals['total'], $sale, "Sale {$sale->invoice_no}", $soldAt);

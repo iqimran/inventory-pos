@@ -68,7 +68,7 @@ Legend:
 - [x] T046 Expense report
 
 ## Hardening
-- [ ] T047 Audit trail
+- [x] T047 Audit trail
 - [ ] T048 Validation/authorization review
 - [ ] T049 Database/index optimization
 - [ ] T050 Critical workflow test suite

@@ -2,6 +2,7 @@
 
 namespace App\Actions\Products;
 
+use App\Domain\Audit\AuditTrail;
 use App\Models\Product;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -22,6 +23,8 @@ class DeleteProduct
         }
 
         DB::transaction(function () use ($product): void {
+            $audit = app(AuditTrail::class);
+            $audit->record('product.deleted', $product, old: $audit->snapshot($product, SaveProduct::AUDITED), description: $product->name);
             $product->stock()->delete();
             $product->delete();
         });

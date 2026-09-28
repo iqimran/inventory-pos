@@ -18,6 +18,7 @@ enum Permission: string
     case RolesView = 'roles.view';
     case RolesManage = 'roles.manage';
     case SettingsManage = 'settings.manage';
+    case AuditView = 'audit.view';
 
     // Products & inventory
     case ProductsView = 'products.view';
@@ -66,6 +67,7 @@ enum Permission: string
             self::RolesView => 'View roles',
             self::RolesManage => 'Manage roles & permissions',
             self::SettingsManage => 'Manage organization settings',
+            self::AuditView => 'View audit log',
             self::ProductsView => 'View products',
             self::ProductsManage => 'Manage products',
             self::InventoryView => 'View stock',
@@ -98,7 +100,7 @@ enum Permission: string
     {
         return match ($this) {
             self::UsersView, self::UsersCreate, self::UsersUpdate, self::UsersDeactivate,
-            self::RolesView, self::RolesManage, self::SettingsManage => 'Administration',
+            self::RolesView, self::RolesManage, self::SettingsManage, self::AuditView => 'Administration',
             self::ProductsView, self::ProductsManage, self::InventoryView, self::InventoryAdjust => 'Products & Inventory',
             self::PartiesView, self::PartiesManage, self::PurchasesView, self::PurchasesCreate, self::PurchasesVoid,
             self::PurchasesReturn, self::PaymentsCreate, self::LedgerAdjust => 'Parties & Purchasing',

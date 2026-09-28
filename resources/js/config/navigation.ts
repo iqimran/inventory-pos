@@ -12,6 +12,7 @@ import {
     FileBarChart,
     FileText,
     FolderTree,
+    History,
     LayoutGrid,
     Package,
     PackageSearch,
@@ -107,6 +108,7 @@ export const navigation: NavGroup[] = [
         items: [
             { title: 'Users', url: '/admin/users', icon: Users, permission: 'users.view' },
             { title: 'Roles & Permissions', url: '/admin/roles', icon: ShieldCheck, permission: 'roles.view' },
+            { title: 'Audit log', url: '/admin/audit-logs', icon: History, permission: 'audit.view' },
         ],
     },
 ];
