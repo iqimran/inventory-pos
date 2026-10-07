@@ -78,10 +78,9 @@ class ServiceInvoiceController extends Controller
                 'party',
                 'serviceJob.device',
                 'items' => fn ($query) => $query->with('product:id,sku')->orderBy('id'),
-                'allocations.payment',
                 'creator:id,name',
             ])),
-            'shop' => $organization->details(),
+            'shop' => $organization->documentHeader(),
             'invoiceBarcode' => $barcodes->dataUri($serviceInvoice->invoice_no, 40),
             'autoPrint' => $request->boolean('print'),
         ]);

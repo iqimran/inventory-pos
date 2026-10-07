@@ -2,6 +2,7 @@
 
 namespace App\Actions\Users;
 
+use App\Domain\Audit\AuditTrail;
 use App\Enums\SystemRole;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -29,12 +30,16 @@ class UpdateUser
                 $this->ensureAdminRemains->handle($user, 'role');
             }
 
+            $before = $this->accessSnapshot($user);
+
             $user->fill([
                 'name' => $data['name'],
                 'email' => $data['email'],
             ]);
 
-            if (filled($data['password'] ?? null)) {
+            $passwordChanged = filled($data['password'] ?? null);
+
+            if ($passwordChanged) {
                 $user->password = $data['password'];
             }
 
@@ -43,7 +48,26 @@ class UpdateUser
             $user->syncRoles([$data['role']]);
             $user->syncPermissions($user->isAdmin() ? [] : ($data['permissions'] ?? []));
 
+            // The password itself is never stored; only the fact that it changed.
+            $after = $this->accessSnapshot($user->fresh());
+            $before['password_changed'] = false;
+            $after['password_changed'] = $passwordChanged;
+            app(AuditTrail::class)->recordChanges('user.updated', $user, $before, $after, $user->email);
+
             return $user;
         });
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function accessSnapshot(User $user): array
+    {
+        return [
+            'name' => $user->name,
+            'email' => $user->email,
+            'role' => $user->getRoleNames()->first(),
+            'permissions' => $user->getDirectPermissions()->pluck('name')->sort()->values()->all(),
+        ];
     }
 }

@@ -51,7 +51,7 @@ export default function ShowServiceInvoice({ invoice: { data: invoice } }: { inv
                         {invoice.job && (
                             <p className="text-sm">
                                 Job{' '}
-                                <Link href={route('service-jobs.show', invoice.job.id)} className="font-mono hover:underline">
+                                <Link href={route('service-jobs.show', invoice.job.id)} className="font-mono whitespace-nowrap hover:underline">
                                     {invoice.job.job_no}
                                 </Link>{' '}
                                 · {invoice.job.device?.name}
@@ -150,7 +150,10 @@ export default function ShowServiceInvoice({ invoice: { data: invoice } }: { inv
                                 {invoice.allocations?.map((allocation) => (
                                     <li key={allocation.id} className="flex justify-between gap-2 px-4 py-2">
                                         <span>
-                                            <Link href={route('customer-payments.show', allocation.payment.id)} className="font-mono hover:underline">
+                                            <Link
+                                                href={route('customer-payments.show', allocation.payment.id)}
+                                                className="font-mono whitespace-nowrap hover:underline"
+                                            >
                                                 {allocation.payment.payment_no}
                                             </Link>
                                             <span className="text-muted-foreground ml-2 text-xs">

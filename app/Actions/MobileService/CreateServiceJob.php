@@ -2,6 +2,7 @@
 
 namespace App\Actions\MobileService;
 
+use App\Domain\MobileService\EstimateCharge;
 use App\Enums\ServiceJobStatus;
 use App\Models\Device;
 use App\Models\ServiceJob;
@@ -20,6 +21,7 @@ class CreateServiceJob
     public function __construct(
         private readonly SaveDevice $saveDevice,
         private readonly DocumentNumberGenerator $numbers,
+        private readonly EstimateCharge $estimateCharge,
     ) {}
 
     /**
@@ -57,6 +59,7 @@ class CreateServiceJob
             ]);
 
             $job->statusLogs()->create(['from_status' => null, 'to_status' => ServiceJobStatus::Received, 'created_by' => Auth::id()]);
+            $this->estimateCharge->sync($job);
 
             return $job;
         }, 3);

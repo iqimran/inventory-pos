@@ -11,7 +11,8 @@ use Illuminate\Validation\ValidationException;
 
 /**
  * Adds, changes or removes a service / labour charge on an open, un-invoiced job and keeps the
- * job's service_charge total in step. Service charges are SERVICE revenue and never touch stock.
+ * job's service_charge total in step. Changing or removing the estimate line changes or clears the
+ * job's estimate (see EstimateCharge). Service charges are SERVICE revenue and never touch stock.
  */
 class SaveServiceJobCharge
 {
@@ -30,6 +31,11 @@ class SaveServiceJobCharge
 
             if ($charge) {
                 $charge->update($attributes);
+
+                // The estimate line is the estimate: keep the two equal.
+                if ($charge->is_estimate) {
+                    $job->update(['estimated_amount' => $attributes['amount']]);
+                }
             } else {
                 $charge = $job->charges()->create($attributes);
             }
@@ -49,6 +55,11 @@ class SaveServiceJobCharge
             $job = $this->guard->lockForBilling($charge->service_job_id);
 
             $charge->refresh()->delete();
+
+            if ($charge->is_estimate) {
+                $job->update(['estimated_amount' => '0.00']);
+            }
+
             $this->refreshTotal($job);
         }, 3);
     }

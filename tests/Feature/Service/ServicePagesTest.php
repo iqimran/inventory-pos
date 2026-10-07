@@ -191,7 +191,7 @@ class ServicePagesTest extends TestCase
                 ->where('invoice.data.total', '1300.00')
                 ->where('invoice.data.paid_amount', '1000.00')
                 ->where('invoice.data.due_amount', '300.00')
-                ->has('invoice.data.allocations', 1)
+                ->missing('invoice.data.allocations')        // the slip prints only the total paid
                 ->missing('invoice.data.items.0.unit_cost')); // customer copy never shows cost
 
         $outsider = User::factory()->create();

@@ -10,6 +10,7 @@ use App\Models\Payment;
 use App\Models\Product;
 use App\Models\Purchase;
 use App\Models\User;
+use App\Support\Money;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
@@ -178,6 +179,70 @@ class SupplierAdvanceAndPaymentTest extends TestCase
         $this->assertSame('0.00', $supplier->fresh()->balance);
         // The unallocated payment settled the opening balance; it is not an advance.
         $this->assertSame('0.00', app(PaymentAllocator::class)->availableAdvance($supplier->fresh()));
+    }
+
+    private function supplierHoldingOpeningAdvance(string $amount): Party
+    {
+        return $this->supplier = app(SaveParty::class)->handle(null, [
+            'name' => 'Legacy Supplier', 'type' => 'SUPPLIER', 'is_active' => true,
+            'opening_balance' => $amount, 'opening_balance_type' => 'RECEIVABLE',
+        ]);
+    }
+
+    public function test_opening_receivable_and_later_advance_can_both_settle_a_purchase()
+    {
+        $this->supplierHoldingOpeningAdvance('50000.00');
+        $this->advance('5000.00');
+
+        $this->assertSame('55000.00', app(PaymentAllocator::class)->availableAdvance($this->supplier->fresh()));
+
+        $purchase = $this->purchase('8000.00', 1, ['apply_advance' => true]);
+
+        $this->assertSame('8000.00', $purchase->paid_amount);
+        $this->assertSame(PaymentStatus::Paid, $purchase->payment_status);
+        // The opening advance (oldest) is consumed first; no payment backs that allocation.
+        $this->assertSame('8000.00', Money::of((string) $purchase->allocations()->whereNull('payment_id')->sum('amount')));
+        $this->assertSame('0.00', Payment::where('purpose', 'SUPPLIER_ADVANCE')->sole()->allocated_amount);
+        $this->assertSame('47000.00', $this->supplier->fresh()->balance);
+        $this->assertSame('47000.00', app(PaymentAllocator::class)->availableAdvance($this->supplier->fresh()));
+
+        $this->actingAs($this->admin)->get("/purchases/{$purchase->id}")->assertOk();
+    }
+
+    public function test_opening_advance_can_settle_the_rest_of_an_existing_purchase()
+    {
+        $this->supplierHoldingOpeningAdvance('50000.00');
+        $this->advance('5000.00');
+        $purchase = $this->purchase('8000.00');
+
+        $this->actingAs($this->admin)->post("/purchases/{$purchase->id}/apply-advance")->assertSessionHasNoErrors();
+
+        $this->assertSame(PaymentStatus::Paid, $purchase->fresh()->payment_status);
+        $this->assertSame('47000.00', app(PaymentAllocator::class)->availableAdvance($this->supplier->fresh()));
+    }
+
+    public function test_opening_advance_is_capped_once_consumed()
+    {
+        $this->supplierHoldingOpeningAdvance('1000.00');
+
+        $purchase = $this->purchase('1500.00', 1, ['apply_advance' => true]);
+
+        $this->assertSame('1000.00', $purchase->paid_amount);
+        $this->assertSame('500.00', $purchase->due_amount);
+        $this->assertSame('0.00', app(PaymentAllocator::class)->availableAdvance($this->supplier->fresh()));
+
+        $second = $this->purchase('100.00', 1, ['apply_advance' => true]);
+        $this->assertSame('0.00', $second->paid_amount);
+    }
+
+    public function test_customer_opening_receivable_is_not_a_supplier_advance()
+    {
+        $customer = app(SaveParty::class)->handle(null, [
+            'name' => 'Walk-in Debtor', 'type' => 'CUSTOMER', 'is_active' => true,
+            'opening_balance' => '1000.00', 'opening_balance_type' => 'RECEIVABLE',
+        ]);
+
+        $this->assertSame('0.00', app(PaymentAllocator::class)->availableAdvance($customer));
     }
 
     public function test_payments_require_permission()

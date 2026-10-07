@@ -95,6 +95,22 @@ export default function ShowSale({ sale: { data: sale } }: { sale: { data: Sale 
                                         )}
                                     </tr>
                                 ))}
+                                {sale.service_charges?.map((charge) => (
+                                    <tr key={`service-${charge.id}`} className="border-t">
+                                        <td className="px-4 py-3">
+                                            <div className="font-medium">{charge.description}</div>
+                                            <div className="text-muted-foreground text-xs">Service charge</div>
+                                        </td>
+                                        <td className="px-4 py-3 text-right tabular-nums">1</td>
+                                        <td className="px-4 py-3 text-right tabular-nums">{formatMoney(charge.amount)}</td>
+                                        <td className="px-4 py-3 text-right tabular-nums">
+                                            {toCents(charge.discount_share) > 0 ? formatMoney(charge.discount_share) : '—'}
+                                        </td>
+                                        <td className="px-4 py-3 text-right tabular-nums">{formatMoney(charge.line_total)}</td>
+                                        <td className="px-4 py-3 text-right">—</td>
+                                        {sale.cost_total !== undefined && <td className="px-4 py-3" />}
+                                    </tr>
+                                ))}
                             </tbody>
                         </table>
                     </div>
@@ -118,7 +134,10 @@ export default function ShowSale({ sale: { data: sale } }: { sale: { data: Sale 
                                 {sale.allocations?.map((allocation) => (
                                     <li key={allocation.id} className="flex justify-between gap-2 px-4 py-2">
                                         <span>
-                                            <Link href={route('customer-payments.show', allocation.payment.id)} className="font-mono hover:underline">
+                                            <Link
+                                                href={route('customer-payments.show', allocation.payment.id)}
+                                                className="font-mono whitespace-nowrap hover:underline"
+                                            >
                                                 {allocation.payment.payment_no}
                                             </Link>
                                             <span className="text-muted-foreground ml-2 text-xs">
@@ -137,7 +156,10 @@ export default function ShowSale({ sale: { data: sale } }: { sale: { data: Sale 
                                     {sale.returns.map((saleReturn) => (
                                         <li key={saleReturn.id} className="flex justify-between gap-2 px-4 py-2">
                                             <span>
-                                                <Link href={route('sale-returns.show', saleReturn.id)} className="font-mono hover:underline">
+                                                <Link
+                                                    href={route('sale-returns.show', saleReturn.id)}
+                                                    className="font-mono whitespace-nowrap hover:underline"
+                                                >
                                                     {saleReturn.return_no}
                                                 </Link>
                                                 <span className="text-muted-foreground ml-2 text-xs">{saleReturn.reason}</span>

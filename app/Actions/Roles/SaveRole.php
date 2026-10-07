@@ -2,6 +2,7 @@
 
 namespace App\Actions\Roles;
 
+use App\Domain\Audit\AuditTrail;
 use App\Models\Role;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -26,11 +27,20 @@ class SaveRole
         }
 
         return DB::transaction(function () use ($role, $name, $permissions): Role {
+            $creating = $role === null;
+            $before = $creating ? [] : ['name' => $role->name, 'permissions' => $role->permissions()->pluck('name')->sort()->values()->all()];
+
             $role ??= new Role(['guard_name' => 'web']);
             $role->name = $name;
             $role->save();
 
             $role->syncPermissions($permissions);
+
+            $after = ['name' => $role->name, 'permissions' => $role->permissions()->pluck('name')->sort()->values()->all()];
+            $audit = app(AuditTrail::class);
+            $creating
+                ? $audit->record('role.created', $role, new: $after, description: $role->name)
+                : $audit->recordChanges('role.updated', $role, $before, $after, $role->name);
 
             return $role;
         });

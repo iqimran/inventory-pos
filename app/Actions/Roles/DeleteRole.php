@@ -2,7 +2,9 @@
 
 namespace App\Actions\Roles;
 
+use App\Domain\Audit\AuditTrail;
 use App\Models\Role;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class DeleteRole
@@ -20,6 +22,12 @@ class DeleteRole
             throw ValidationException::withMessages(['role' => 'Reassign the users of this role before deleting it.']);
         }
 
-        $role->delete();
+        DB::transaction(function () use ($role): void {
+            app(AuditTrail::class)->record('role.deleted', $role, old: [
+                'name' => $role->name, 'permissions' => $role->permissions()->pluck('name')->sort()->values()->all(),
+            ], description: $role->name);
+
+            $role->delete();
+        });
     }
 }

@@ -43,7 +43,9 @@ export function RoleForm({ role, permissionGroups }: { role?: EditableRole; perm
             )}
 
             <div className="grid max-w-md gap-2">
-                <Label htmlFor="name">Role name</Label>
+                <Label htmlFor="name" required>
+                    Role name
+                </Label>
                 <Input
                     id="name"
                     value={data.name}

@@ -9,25 +9,27 @@ import { Link } from '@inertiajs/react';
 
 interface ServiceRevenueProps {
     filters: { from: string; to: string; group_by: string };
-    totals: { revenue: string; invoices: number };
+    totals: { revenue: string; invoices: number; repairs: string; pos_charges: string; pos_sales: number };
     periods: RevenuePeriod[];
-    technicians: { technician_id: number | null; technician: string | null; invoices: number; revenue: string }[];
+    technicians: { source: 'JOB' | 'POS'; technician_id: number | null; technician: string | null; invoices: number; revenue: string }[];
     lines: Paginator<{
+        source: 'JOB' | 'POS';
         id: number;
         description: string;
         amount: string;
         invoice_id: number;
         invoice_no: string;
         invoiced_at: string;
-        job_id: number;
-        job_no: string;
+        job_id: number | null;
+        job_no: string | null;
         customer: string;
         technician: string | null;
     }>;
 }
 
 /**
- * T042 — mobile service revenue from SERVICE lines only (parts on the same invoices are product revenue).
+ * T042 — mobile service revenue from SERVICE lines only (parts on the same invoices are product revenue),
+ * including service charges billed on POS sales.
  */
 export default function ServiceRevenue({ filters, totals, periods, technicians, lines }: ServiceRevenueProps) {
     const range = { from: filters.from, to: filters.to };
@@ -38,7 +40,17 @@ export default function ServiceRevenue({ filters, totals, periods, technicians, 
             <ReportFilters routeName="reports.service-revenue" filters={filters} grouping />
 
             <div className="grid gap-4 sm:grid-cols-3">
-                <StatCard label="Service revenue" value={formatMoney(totals.revenue)} sub={`${totals.invoices} service invoice(s)`} emphasis />
+                <StatCard
+                    label="Service revenue"
+                    value={formatMoney(totals.revenue)}
+                    sub={`Repairs ${formatMoney(totals.repairs)} · POS service charges ${formatMoney(totals.pos_charges)}`}
+                    emphasis
+                />
+                <StatCard
+                    label="Documents"
+                    value={`${totals.invoices + totals.pos_sales}`}
+                    sub={`${totals.invoices} service invoice(s) · ${totals.pos_sales} POS sale(s)`}
+                />
                 <StatCard
                     label="Parts on service invoices"
                     value="Product revenue"
@@ -97,7 +109,7 @@ export default function ServiceRevenue({ filters, totals, periods, technicians, 
                                     </tr>
                                 )}
                                 {technicians.map((row) => (
-                                    <tr key={row.technician_id ?? 'none'} className="border-t">
+                                    <tr key={`${row.source}-${row.technician_id ?? 'none'}`} className="border-t">
                                         <td className={td}>{row.technician ?? <span className="text-muted-foreground">Unassigned</span>}</td>
                                         <td className={tdRight}>{row.invoices}</td>
                                         <td className={tdRight}>{formatMoney(row.revenue)}</td>
@@ -133,17 +145,31 @@ export default function ServiceRevenue({ filters, totals, periods, technicians, 
                                 </tr>
                             )}
                             {lines.data.map((line) => (
-                                <tr key={line.id} className="border-t">
+                                <tr key={`${line.source}-${line.id}`} className="border-t">
                                     <td className={`${td} whitespace-nowrap`}>{formatDateTime(line.invoiced_at)}</td>
                                     <td className={td}>
-                                        <Link href={route('service-invoices.show', line.invoice_id)} className="font-mono hover:underline">
+                                        <Link
+                                            href={
+                                                line.source === 'POS'
+                                                    ? route('sales.show', line.invoice_id)
+                                                    : route('service-invoices.show', line.invoice_id)
+                                            }
+                                            className="font-mono whitespace-nowrap hover:underline"
+                                        >
                                             {line.invoice_no}
                                         </Link>
                                     </td>
                                     <td className={td}>
-                                        <Link href={route('service-jobs.show', line.job_id)} className="font-mono hover:underline">
-                                            {line.job_no}
-                                        </Link>
+                                        {line.job_id ? (
+                                            <Link
+                                                href={route('service-jobs.show', line.job_id)}
+                                                className="font-mono whitespace-nowrap hover:underline"
+                                            >
+                                                {line.job_no}
+                                            </Link>
+                                        ) : (
+                                            <span className="text-muted-foreground">POS sale</span>
+                                        )}
                                     </td>
                                     <td className={td}>{line.customer}</td>
                                     <td className={td}>{line.technician ?? '—'}</td>

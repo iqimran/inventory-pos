@@ -43,12 +43,16 @@ export function PartyForm({ party, types, openingBalanceTypes }: PartyFormProps)
         <form onSubmit={submit} className="max-w-3xl space-y-6">
             <div className="grid gap-6 md:grid-cols-2">
                 <div className="grid gap-2">
-                    <Label htmlFor="name">Name</Label>
+                    <Label htmlFor="name" required>
+                        Name
+                    </Label>
                     <Input id="name" value={data.name} onChange={(e) => setData('name', e.target.value)} required />
                     <InputError message={errors.name} />
                 </div>
                 <div className="grid gap-2">
-                    <Label htmlFor="type">Type</Label>
+                    <Label htmlFor="type" required>
+                        Type
+                    </Label>
                     <select id="type" className={selectClass} value={data.type} onChange={(e) => setData('type', e.target.value)}>
                         {types.map((type) => (
                             <option key={type.value} value={type.value}>

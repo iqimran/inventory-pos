@@ -42,13 +42,17 @@ export function UserForm({ user, roles, permissionGroups }: UserFormProps) {
         <form onSubmit={submit} className="space-y-8">
             <div className="grid gap-6 md:grid-cols-2">
                 <div className="grid gap-2">
-                    <Label htmlFor="name">Name</Label>
+                    <Label htmlFor="name" required>
+                        Name
+                    </Label>
                     <Input id="name" value={data.name} onChange={(e) => setData('name', e.target.value)} required autoComplete="off" />
                     <InputError message={errors.name} />
                 </div>
 
                 <div className="grid gap-2">
-                    <Label htmlFor="email">Email</Label>
+                    <Label htmlFor="email" required>
+                        Email
+                    </Label>
                     <Input
                         id="email"
                         type="email"
@@ -61,7 +65,9 @@ export function UserForm({ user, roles, permissionGroups }: UserFormProps) {
                 </div>
 
                 <div className="grid gap-2">
-                    <Label htmlFor="password">{user ? 'New password (leave blank to keep)' : 'Password'}</Label>
+                    <Label htmlFor="password" required={!user}>
+                        {user ? 'New password (leave blank to keep)' : 'Password'}
+                    </Label>
                     <Input
                         id="password"
                         type="password"
@@ -74,7 +80,9 @@ export function UserForm({ user, roles, permissionGroups }: UserFormProps) {
                 </div>
 
                 <div className="grid gap-2">
-                    <Label htmlFor="password_confirmation">Confirm password</Label>
+                    <Label htmlFor="password_confirmation" required={!user}>
+                        Confirm password
+                    </Label>
                     <Input
                         id="password_confirmation"
                         type="password"
@@ -86,7 +94,9 @@ export function UserForm({ user, roles, permissionGroups }: UserFormProps) {
                 </div>
 
                 <div className="grid gap-2">
-                    <Label htmlFor="role">Role</Label>
+                    <Label htmlFor="role" required>
+                        Role
+                    </Label>
                     <Select value={data.role} onValueChange={(value) => setData('role', value)}>
                         <SelectTrigger id="role">
                             <SelectValue placeholder="Select a role" />

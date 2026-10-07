@@ -205,7 +205,9 @@ export function MasterDataPage<T extends MasterRecord>({
                     <form onSubmit={submit} className="space-y-4">
                         {fields.map((field) => (
                             <div key={field.name} className="grid gap-2">
-                                <Label htmlFor={field.name}>{field.label}</Label>
+                                <Label htmlFor={field.name} required={field.required}>
+                                    {field.label}
+                                </Label>
                                 {field.type === 'select' ? (
                                     <select
                                         id={field.name}

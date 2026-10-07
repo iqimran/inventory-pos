@@ -33,6 +33,14 @@ export interface SaleItem {
     returnable_quantity: number;
 }
 
+export interface SaleServiceCharge {
+    id: number;
+    description: string;
+    amount: string;
+    discount_share: string;
+    line_total: string;
+}
+
 export interface SaleReturn {
     id: number;
     return_no: string;
@@ -60,6 +68,7 @@ export interface Sale {
     subtotal: string;
     items_discount: string;
     discount: string;
+    service_total: string;
     total: string;
     paid_amount: string;
     returned_amount: string;
@@ -73,6 +82,7 @@ export interface Sale {
     notes: string | null;
     party?: { id: number; name: string; phone: string | null; address: string | null } | null;
     items?: SaleItem[];
+    service_charges?: SaleServiceCharge[];
     cost_total?: string;
     returns?: {
         id: number;

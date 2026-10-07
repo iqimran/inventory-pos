@@ -21,14 +21,15 @@ class ExpenseReport
      *     by_period: list<array{period: string, count: int, total: string}>
      * }
      */
-    public function build(CarbonImmutable $from, CarbonImmutable $to, ?int $typeId = null, string $groupBy = 'day'): array
+    public function build(CarbonImmutable $from, CarbonImmutable $to, ?int $typeId = null, string $groupBy = 'day', ?int $createdBy = null): array
     {
         $base = fn (): Builder => Expense::query()
             ->recorded()
             // whereDate: correct whether the driver stores DATE values with or without a time part.
             ->whereDate('expense_date', '>=', $from->toDateString())
             ->whereDate('expense_date', '<=', $to->toDateString())
-            ->when($typeId, fn (Builder $q) => $q->where('expense_type_id', $typeId));
+            ->when($typeId, fn (Builder $q) => $q->where('expense_type_id', $typeId))
+            ->when($createdBy, fn (Builder $q) => $q->where('created_by', $createdBy));
 
         $typeRows = $base()
             ->selectRaw('expense_type_id, COUNT(*) as expense_count, SUM(amount) as total_amount')

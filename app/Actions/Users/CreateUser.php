@@ -2,6 +2,7 @@
 
 namespace App\Actions\Users;
 
+use App\Domain\Audit\AuditTrail;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
@@ -22,6 +23,11 @@ class CreateUser
 
             $user->syncRoles([$data['role']]);
             $user->syncPermissions($user->isAdmin() ? [] : ($data['permissions'] ?? []));
+
+            app(AuditTrail::class)->record('user.created', $user, new: [
+                'name' => $user->name, 'email' => $user->email, 'is_active' => (bool) $user->is_active,
+                'role' => $data['role'], 'permissions' => $user->getDirectPermissions()->pluck('name')->sort()->values()->all(),
+            ], description: $user->email);
 
             return $user;
         });

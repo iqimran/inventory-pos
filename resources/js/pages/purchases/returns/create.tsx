@@ -93,7 +93,9 @@ export default function CreatePurchaseReturn({ purchase: { data: purchase }, met
 
                 <div className="grid gap-4 md:grid-cols-2">
                     <div className="grid gap-2">
-                        <Label htmlFor="return_date">Return date</Label>
+                        <Label htmlFor="return_date" required>
+                            Return date
+                        </Label>
                         <Input
                             id="return_date"
                             type="date"
@@ -103,7 +105,9 @@ export default function CreatePurchaseReturn({ purchase: { data: purchase }, met
                         <InputError message={errors.return_date} />
                     </div>
                     <div className="grid gap-2">
-                        <Label htmlFor="reason">Reason</Label>
+                        <Label htmlFor="reason" required>
+                            Reason
+                        </Label>
                         <Input
                             id="reason"
                             value={form.data.reason}

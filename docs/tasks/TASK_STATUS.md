@@ -68,9 +68,25 @@ Legend:
 - [x] T046 Expense report
 
 ## Hardening
-- [ ] T047 Audit trail
-- [ ] T048 Validation/authorization review
-- [ ] T049 Database/index optimization
-- [ ] T050 Critical workflow test suite
-- [ ] T051 UI/UX polish
-- [ ] T052 Deployment documentation
+- [x] T047 Audit trail
+- [x] T048 Validation/authorization review
+- [x] T049 Database/index optimization
+- [x] T050 Critical workflow test suite
+- [x] T051 UI/UX polish
+- [x] T052 Deployment documentation
+
+## Docker / Git / Deployment
+- [x] T053 Docker development environment
+- [x] T054 Docker production environment
+- [x] T055 Git/commit/release workflow
+- [x] T056 Production deployment verification
+
+## Post-release fixes (2026-10-07)
+- [x] Dashboard and report figures require the matching module permissions
+- [x] Dashboard: whole shop for Admin, own transactions for every other user
+- [x] Party outstanding split into customer dues/credit and supplier payables/advances
+- [x] Required form fields marked with a red asterisk
+- [x] New product dialog on the purchase form
+- [x] POS service charges on the sale invoice (SERVICE revenue, no stock)
+- [x] Admin database backups: manual (download, delete, clear) and one daily automatic file
+- [x] Service job estimate billed as its own service charge line, in addition to parts and charges

@@ -15,21 +15,36 @@ use Illuminate\Support\Facades\DB;
  * Revenue by classification, from invoice LINES:
  *
  * - PRODUCT revenue = POS sale lines + service-invoice PRODUCT lines (parts) − sale returns;
- * - SERVICE revenue = service-invoice SERVICE lines;
+ * - SERVICE revenue = service-invoice SERVICE lines + service charges billed on POS sales;
  * - COMBINED revenue = PRODUCT + SERVICE.
  *
  * A service invoice with parts and labour therefore contributes its parts to product revenue and its
  * labour to service revenue, and exactly its total to combined revenue — never counted twice.
  * Line amounts are net of discounts (discount shares), so they add up to what customers were billed.
  * Returns count in the period in which the goods came back.
+ *
+ * createdBy() narrows every figure to the documents one user recorded (the non-admin dashboard).
  */
 class RevenueReport
 {
+    private ?int $createdBy = null;
+
+    /**
+     * A copy limited to sales, service invoices and returns recorded by the given user (null = everyone).
+     */
+    public function createdBy(?int $userId): static
+    {
+        $report = clone $this;
+        $report->createdBy = $userId;
+
+        return $report;
+    }
+
     /**
      * @return array{
      *     product: array{pos_sales: string, service_parts: string, returns: string, net: string,
      *                    quantity: array{pos: int, parts: int, returned: int, net: int}, cost: string, gross_profit: string},
-     *     service: array{revenue: string, invoices: int},
+     *     service: array{revenue: string, invoices: int, repairs: string, pos_charges: string, pos_sales: int},
      *     combined: string,
      *     documents: array{sales: int, service_invoices: int, sale_returns: int, total: string, matches: bool}
      * }
@@ -50,6 +65,10 @@ class RevenueReport
             ->selectRaw('COALESCE(SUM(sale_return_items.amount), 0) as amount, COALESCE(SUM(sale_return_items.quantity), 0) as quantity, COALESCE(SUM(sale_return_items.cost_total), 0) as cost')
             ->first();
 
+        $counter = $this->posServiceLines($period)
+            ->selectRaw('COALESCE(SUM(sale_service_charges.line_total), 0) as amount, COUNT(DISTINCT sale_service_charges.sale_id) as sales')
+            ->first();
+
         $parts = $service->get(InvoiceLineType::Product->value);
         $labour = $service->get(InvoiceLineType::Service->value);
 
@@ -57,7 +76,9 @@ class RevenueReport
         $partsAmount = Money::of((string) ($parts->amount ?? 0));
         $returnsAmount = Money::of((string) $returns->amount);
         $productNet = Money::sub(Money::add($posAmount, $partsAmount), $returnsAmount);
-        $serviceRevenue = Money::of((string) ($labour->amount ?? 0));
+        $repairs = Money::of((string) ($labour->amount ?? 0));
+        $posCharges = Money::of((string) $counter->amount);
+        $serviceRevenue = Money::add($repairs, $posCharges);
         $cost = Money::sub(Money::add(Money::of((string) $pos->cost), Money::of((string) ($parts->cost ?? 0))), Money::of((string) $returns->cost));
         $combined = Money::add($productNet, $serviceRevenue);
         $documents = $this->documentTotals($period);
@@ -80,6 +101,9 @@ class RevenueReport
             'service' => [
                 'revenue' => $serviceRevenue,
                 'invoices' => (int) ($labour->invoices ?? 0),
+                'repairs' => $repairs,
+                'pos_charges' => $posCharges,
+                'pos_sales' => (int) $counter->sales,
             ],
             'combined' => $combined,
             // Independent check from document totals: sales − returns + service invoices.
@@ -125,6 +149,14 @@ class RevenueReport
             }
         }
 
+        foreach ($this->posServiceLines($period)
+            ->selectRaw("{$posBucket} as bucket, SUM(sale_service_charges.line_total) as amount")
+            ->groupBy(DB::raw($posBucket))
+            ->get() as $charge) {
+            $row($charge->bucket);
+            $rows[$charge->bucket]['service'] = Money::add($rows[$charge->bucket]['service'], Money::of((string) $charge->amount));
+        }
+
         $returnBucket = $this->sql($period->bucket('sale_returns.returned_at'));
         foreach ($this->returnLines($period)
             ->selectRaw("{$returnBucket} as bucket, SUM(sale_return_items.amount) as amount, SUM(sale_return_items.quantity) as quantity")
@@ -159,7 +191,7 @@ class RevenueReport
 
         $lines = $pos->unionAll($parts)->unionAll($returns);
 
-        return DB::query()
+        $query = DB::query()
             ->fromSub($lines, 'lines')
             ->join('products', 'products.id', '=', 'lines.product_id')
             ->groupBy('lines.product_id', 'products.name', 'products.sku')
@@ -170,33 +202,33 @@ class RevenueReport
                 SUM(lines.pos_amount) + SUM(lines.parts_amount) - SUM(lines.returned_amount) as net_amount,
                 SUM(lines.cost) as cost')
             ->orderByDesc('net_amount')
-            ->orderBy('products.name')
-            ->paginate($perPage)
-            ->withQueryString()
-            ->through(fn ($r) => [
-                'product_id' => (int) $r->product_id,
-                'name' => $r->name,
-                'sku' => $r->sku,
-                'pos_qty' => (int) $r->pos_qty,
-                'pos_amount' => Money::of((string) $r->pos_amount),
-                'parts_qty' => (int) $r->parts_qty,
-                'parts_amount' => Money::of((string) $r->parts_amount),
-                'returned_qty' => (int) $r->returned_qty,
-                'returned_amount' => Money::of((string) $r->returned_amount),
-                'net_qty' => (int) $r->pos_qty + (int) $r->parts_qty - (int) $r->returned_qty,
-                'net_amount' => Money::of((string) $r->net_amount),
-                'cost' => Money::of((string) $r->cost),
-            ]);
+            ->orderBy('products.name');
+
+        // One row per product sold: run the aggregate once instead of once more for the count.
+        return AggregatePaginator::paginate($query, $perPage, 'page', fn ($r) => [
+            'product_id' => (int) $r->product_id,
+            'name' => $r->name,
+            'sku' => $r->sku,
+            'pos_qty' => (int) $r->pos_qty,
+            'pos_amount' => Money::of((string) $r->pos_amount),
+            'parts_qty' => (int) $r->parts_qty,
+            'parts_amount' => Money::of((string) $r->parts_amount),
+            'returned_qty' => (int) $r->returned_qty,
+            'returned_amount' => Money::of((string) $r->returned_amount),
+            'net_qty' => (int) $r->pos_qty + (int) $r->parts_qty - (int) $r->returned_qty,
+            'net_amount' => Money::of((string) $r->net_amount),
+            'cost' => Money::of((string) $r->cost),
+        ]);
     }
 
     /**
-     * SERVICE revenue per technician.
+     * SERVICE revenue per technician; service charges billed at the POS counter form their own row.
      *
-     * @return list<array{technician_id: ?int, technician: ?string, invoices: int, revenue: string}>
+     * @return list<array{source: string, technician_id: ?int, technician: ?string, invoices: int, revenue: string}>
      */
     public function serviceByTechnician(ReportPeriod $period): array
     {
-        return $this->serviceLines($period)
+        $rows = $this->serviceLines($period)
             ->where('service_invoice_items.line_type', InvoiceLineType::Service->value)
             ->join('service_jobs', 'service_jobs.id', '=', 'service_invoices.service_job_id')
             ->leftJoin('users', 'users.id', '=', 'service_jobs.technician_id')
@@ -205,43 +237,77 @@ class RevenueReport
             ->orderByDesc('revenue')
             ->get()
             ->map(fn ($r) => [
+                'source' => 'JOB',
                 'technician_id' => $r->technician_id !== null ? (int) $r->technician_id : null,
                 'technician' => $r->technician,
                 'invoices' => (int) $r->invoices,
                 'revenue' => Money::of((string) $r->revenue),
             ])
             ->all();
+
+        $counter = $this->posServiceLines($period)
+            ->selectRaw('COUNT(DISTINCT sale_service_charges.sale_id) as invoices, COALESCE(SUM(sale_service_charges.line_total), 0) as revenue')
+            ->first();
+
+        if ((int) $counter->invoices > 0) {
+            $rows[] = [
+                'source' => 'POS',
+                'technician_id' => null,
+                'technician' => 'Counter sales (POS)',
+                'invoices' => (int) $counter->invoices,
+                'revenue' => Money::of((string) $counter->revenue),
+            ];
+            usort($rows, fn (array $a, array $b) => Money::cmp($b['revenue'], $a['revenue']));
+        }
+
+        return $rows;
     }
 
     /**
-     * The SERVICE lines themselves, newest first.
+     * The SERVICE lines themselves (service invoices and POS sale service charges), newest first.
      */
     public function serviceLineDetails(ReportPeriod $period, int $perPage = 25): LengthAwarePaginator
     {
-        return $this->serviceLines($period)
+        $jobs = $this->serviceLines($period)
             ->where('service_invoice_items.line_type', InvoiceLineType::Service->value)
             ->join('service_jobs', 'service_jobs.id', '=', 'service_invoices.service_job_id')
             ->join('parties', 'parties.id', '=', 'service_invoices.party_id')
             ->leftJoin('users', 'users.id', '=', 'service_jobs.technician_id')
-            ->select([
+            ->selectRaw("'JOB' as source")
+            ->addSelect([
                 'service_invoice_items.id', 'service_invoice_items.description', 'service_invoice_items.line_total',
                 'service_invoices.id as invoice_id', 'service_invoices.invoice_no', 'service_invoices.invoiced_at',
                 'service_jobs.id as job_id', 'service_jobs.job_no', 'parties.name as customer', 'users.name as technician',
+            ]);
+
+        $counter = $this->posServiceLines($period)
+            ->leftJoin('parties', 'parties.id', '=', 'sales.party_id')
+            ->selectRaw("'POS' as source")
+            ->addSelect([
+                'sale_service_charges.id', 'sale_service_charges.description', 'sale_service_charges.line_total',
+                'sales.id as invoice_id', 'sales.invoice_no', 'sales.sold_at as invoiced_at',
             ])
-            ->orderByDesc('service_invoices.invoiced_at')
-            ->orderByDesc('service_invoice_items.id')
+            ->selectRaw('NULL as job_id, NULL as job_no')
+            ->addSelect('parties.name as customer')
+            ->selectRaw('NULL as technician');
+
+        return DB::query()
+            ->fromSub($jobs->unionAll($counter), 'lines')
+            ->orderByDesc('invoiced_at')
+            ->orderByDesc('id')
             ->paginate($perPage, pageName: 'lines_page')
             ->withQueryString()
             ->through(fn ($r) => [
+                'source' => $r->source,
                 'id' => (int) $r->id,
                 'description' => $r->description,
                 'amount' => Money::of((string) $r->line_total),
                 'invoice_id' => (int) $r->invoice_id,
                 'invoice_no' => $r->invoice_no,
                 'invoiced_at' => CarbonImmutable::parse($r->invoiced_at, config('app.timezone'))->toIso8601String(),
-                'job_id' => (int) $r->job_id,
+                'job_id' => $r->job_id !== null ? (int) $r->job_id : null,
                 'job_no' => $r->job_no,
-                'customer' => $r->customer,
+                'customer' => $r->customer ?? 'Walk-in customer',
                 'technician' => $r->technician,
             ]);
     }
@@ -254,7 +320,20 @@ class RevenueReport
         return DB::table('sale_items')
             ->join('sales', 'sales.id', '=', 'sale_items.sale_id')
             ->where('sales.status', SaleStatus::Completed->value)
-            ->whereBetween('sales.sold_at', $period->datetimeBounds());
+            ->whereBetween('sales.sold_at', $period->datetimeBounds())
+            ->when($this->createdBy, fn (Builder $q, int $userId) => $q->where('sales.created_by', $userId));
+    }
+
+    /**
+     * Service charges on completed POS sales in the period.
+     */
+    private function posServiceLines(ReportPeriod $period): Builder
+    {
+        return DB::table('sale_service_charges')
+            ->join('sales', 'sales.id', '=', 'sale_service_charges.sale_id')
+            ->where('sales.status', SaleStatus::Completed->value)
+            ->whereBetween('sales.sold_at', $period->datetimeBounds())
+            ->when($this->createdBy, fn (Builder $q, int $userId) => $q->where('sales.created_by', $userId));
     }
 
     /**
@@ -265,7 +344,8 @@ class RevenueReport
         return DB::table('service_invoice_items')
             ->join('service_invoices', 'service_invoices.id', '=', 'service_invoice_items.service_invoice_id')
             ->where('service_invoices.status', SaleStatus::Completed->value)
-            ->whereBetween('service_invoices.invoiced_at', $period->datetimeBounds());
+            ->whereBetween('service_invoices.invoiced_at', $period->datetimeBounds())
+            ->when($this->createdBy, fn (Builder $q, int $userId) => $q->where('service_invoices.created_by', $userId));
     }
 
     /**
@@ -276,7 +356,8 @@ class RevenueReport
         return DB::table('sale_return_items')
             ->join('sale_returns', 'sale_returns.id', '=', 'sale_return_items.sale_return_id')
             ->where('sale_returns.status', 'COMPLETED')
-            ->whereBetween('sale_returns.returned_at', $period->datetimeBounds());
+            ->whereBetween('sale_returns.returned_at', $period->datetimeBounds())
+            ->when($this->createdBy, fn (Builder $q, int $userId) => $q->where('sale_returns.created_by', $userId));
     }
 
     /**
@@ -285,12 +366,13 @@ class RevenueReport
     private function documentTotals(ReportPeriod $period): array
     {
         $bounds = $period->datetimeBounds();
+        $mine = fn (Builder $q) => $q->when($this->createdBy, fn (Builder $q, int $userId) => $q->where('created_by', $userId));
 
-        $sales = DB::table('sales')->where('status', SaleStatus::Completed->value)->whereBetween('sold_at', $bounds)
+        $sales = DB::table('sales')->tap($mine)->where('status', SaleStatus::Completed->value)->whereBetween('sold_at', $bounds)
             ->selectRaw('COUNT(*) as documents, COALESCE(SUM(total), 0) as total')->first();
-        $invoices = DB::table('service_invoices')->where('status', SaleStatus::Completed->value)->whereBetween('invoiced_at', $bounds)
+        $invoices = DB::table('service_invoices')->tap($mine)->where('status', SaleStatus::Completed->value)->whereBetween('invoiced_at', $bounds)
             ->selectRaw('COUNT(*) as documents, COALESCE(SUM(total), 0) as total')->first();
-        $returns = DB::table('sale_returns')->where('status', 'COMPLETED')->whereBetween('returned_at', $bounds)
+        $returns = DB::table('sale_returns')->tap($mine)->where('status', 'COMPLETED')->whereBetween('returned_at', $bounds)
             ->selectRaw('COUNT(*) as documents, COALESCE(SUM(subtotal), 0) as total')->first();
 
         return [

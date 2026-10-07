@@ -8,13 +8,13 @@ import { PaymentStatusBadge } from '@/features/purchasing/status-badge';
 import { type SelectOption } from '@/features/purchasing/types';
 import { type PosProduct } from '@/features/sales/types';
 import { ServiceStatusBadge } from '@/features/service/status-badge';
-import { type ServiceJob, type ServiceJobPart, type ServiceJobStatus, type Technician } from '@/features/service/types';
+import { type ServiceJob, type ServiceJobCharge, type ServiceJobPart, type ServiceJobStatus, type Technician } from '@/features/service/types';
 import { useCan } from '@/hooks/use-can';
 import AppLayout from '@/layouts/app-layout';
 import { formatDateTime, formatMoney, fromCents, toCents } from '@/lib/format';
 import { getJson } from '@/lib/http';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
-import { Lock, Printer, Search, Trash2 } from 'lucide-react';
+import { Lock, Pencil, Printer, Search, Trash2 } from 'lucide-react';
 import { FormEventHandler, useEffect, useRef, useState } from 'react';
 
 interface ShowJobProps {
@@ -36,6 +36,8 @@ export default function ShowServiceJob({ job: { data: job }, technicians, method
     const open = !['DELIVERED', 'CANCELLED'].includes(job.status);
     const billable = manage && open && !job.invoice;
     const draftTotal = fromCents(toCents(job.parts_total) + toCents(job.service_charge));
+    // The estimate is billed as its own service line; show it apart from the other charges.
+    const estimateLineCents = (job.charges ?? []).filter((charge) => charge.is_estimate).reduce((sum, charge) => sum + toCents(charge.amount), 0);
 
     return (
         <AppLayout
@@ -102,15 +104,22 @@ export default function ShowServiceJob({ job: { data: job }, technicians, method
                         <Card>
                             <CardContent className="space-y-1 pt-6 text-sm">
                                 <h3 className="mb-2 font-medium">Bill</h3>
-                                <Row label="Estimate" value={formatMoney(job.estimated_amount)} />
                                 {job.approved_amount && <Row label="Approved" value={formatMoney(job.approved_amount)} />}
+                                {/* Jobs invoiced before estimates were billed show theirs as a quote only. */}
+                                <Row
+                                    label={estimateLineCents === 0 && toCents(job.estimated_amount) > 0 ? 'Estimate (quote only)' : 'Estimate'}
+                                    value={formatMoney(estimateLineCents > 0 ? fromCents(estimateLineCents) : job.estimated_amount)}
+                                />
                                 <Row label="Parts (product)" value={formatMoney(job.parts_total)} />
-                                <Row label="Service charge" value={formatMoney(job.service_charge)} />
+                                <Row label="Other service charges" value={formatMoney(fromCents(toCents(job.service_charge) - estimateLineCents))} />
                                 <Row label={job.invoice ? 'Invoiced' : 'Draft total'} value={formatMoney(job.invoice?.total ?? draftTotal)} strong />
                                 {job.invoice && (
                                     <div className="space-y-2 border-t pt-2">
                                         <div className="flex items-center justify-between">
-                                            <Link href={route('service-invoices.show', job.invoice.id)} className="font-mono hover:underline">
+                                            <Link
+                                                href={route('service-invoices.show', job.invoice.id)}
+                                                className="font-mono whitespace-nowrap hover:underline"
+                                            >
                                                 {job.invoice.invoice_no}
                                             </Link>
                                             <PaymentStatusBadge status={job.invoice.payment_status} label={job.invoice.payment_status_label} />
@@ -218,7 +227,9 @@ function StatusActions({ job }: { job: ServiceJob }) {
                         {target?.value === 'WAITING_FOR_APPROVAL' && (
                             <>
                                 <div className="grid gap-2">
-                                    <Label htmlFor="diagnosis">Diagnosis</Label>
+                                    <Label htmlFor="diagnosis" required>
+                                        Diagnosis
+                                    </Label>
                                     <textarea
                                         id="diagnosis"
                                         className={textareaClass}
@@ -244,7 +255,9 @@ function StatusActions({ job }: { job: ServiceJob }) {
                         )}
                         {approving && (
                             <div className="grid gap-2">
-                                <Label htmlFor="approved_amount">Amount approved by the customer</Label>
+                                <Label htmlFor="approved_amount" required>
+                                    Amount approved by the customer
+                                </Label>
                                 <Input
                                     id="approved_amount"
                                     type="number"
@@ -259,7 +272,9 @@ function StatusActions({ job }: { job: ServiceJob }) {
                         )}
                         {target?.value === 'CANCELLED' ? (
                             <div className="grid gap-2">
-                                <Label htmlFor="reason">Reason</Label>
+                                <Label htmlFor="reason" required>
+                                    Reason
+                                </Label>
                                 <Input id="reason" value={form.data.reason} onChange={(e) => form.setData('reason', e.target.value)} required />
                                 <InputError message={form.errors.reason} />
                             </div>
@@ -387,7 +402,9 @@ function JobDetails({ job, technicians, editable }: { job: ServiceJob; technicia
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
                 <div className="grid gap-2">
-                    <Label htmlFor="complaint-edit">Complaint</Label>
+                    <Label htmlFor="complaint-edit" required>
+                        Complaint
+                    </Label>
                     <textarea
                         id="complaint-edit"
                         className={textareaClass}
@@ -600,6 +617,88 @@ function PartRow({ job, part, editable, canOverridePrice }: { job: ServiceJob; p
     );
 }
 
+function ChargeRow({ job, charge, editable }: { job: ServiceJob; charge: ServiceJobCharge; editable: boolean }) {
+    const [editing, setEditing] = useState(false);
+    const form = useForm({ description: charge.description, amount: charge.amount });
+
+    const save: FormEventHandler = (e) => {
+        e.preventDefault();
+        form.put(route('service-jobs.charges.update', [job.id, charge.id]), { preserveScroll: true, onSuccess: () => setEditing(false) });
+    };
+
+    if (editing) {
+        return (
+            <li className="px-3 py-2">
+                <form onSubmit={save} className="flex flex-col gap-2 sm:flex-row sm:items-start">
+                    <div className="flex-1">
+                        <Input
+                            value={form.data.description}
+                            onChange={(e) => form.setData('description', e.target.value)}
+                            aria-label="Charge description"
+                            required
+                        />
+                        <InputError message={form.errors.description} />
+                    </div>
+                    <div className="sm:w-32">
+                        <Input
+                            type="number"
+                            min="0.01"
+                            step="0.01"
+                            value={form.data.amount}
+                            onChange={(e) => form.setData('amount', e.target.value)}
+                            aria-label="Charge amount"
+                            required
+                        />
+                        <InputError message={form.errors.amount} />
+                    </div>
+                    <Button type="submit" size="sm" disabled={form.processing}>
+                        Save
+                    </Button>
+                    <Button type="button" size="sm" variant="outline" onClick={() => setEditing(false)}>
+                        Cancel
+                    </Button>
+                </form>
+            </li>
+        );
+    }
+
+    return (
+        <li className="flex items-center justify-between gap-2 px-3 py-2">
+            <span>
+                {charge.description}
+                {charge.is_estimate && (
+                    <span className="text-muted-foreground block text-xs">The job estimate · editing or removing it changes the estimate</span>
+                )}
+            </span>
+            <span className="flex items-center gap-1">
+                <span className="tabular-nums">{formatMoney(charge.amount)}</span>
+                {editable && (
+                    <>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="size-8"
+                            onClick={() => setEditing(true)}
+                            aria-label={`Edit ${charge.description}`}
+                        >
+                            <Pencil className="size-4" />
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="size-8"
+                            onClick={() => router.delete(route('service-jobs.charges.destroy', [job.id, charge.id]), { preserveScroll: true })}
+                            aria-label={`Remove ${charge.description}`}
+                        >
+                            <Trash2 className="size-4" />
+                        </Button>
+                    </>
+                )}
+            </span>
+        </li>
+    );
+}
+
 function ChargesSection({ job, editable }: { job: ServiceJob; editable: boolean }) {
     const form = useForm({ description: 'Repair / labour', amount: '' });
 
@@ -614,27 +713,7 @@ function ChargesSection({ job, editable }: { job: ServiceJob; editable: boolean 
             <div className="rounded-lg border">
                 {job.charges?.length === 0 && <p className="text-muted-foreground px-3 py-4 text-center text-sm">No service charge.</p>}
                 <ul className="divide-y text-sm">
-                    {job.charges?.map((charge) => (
-                        <li key={charge.id} className="flex items-center justify-between gap-2 px-3 py-2">
-                            <span>{charge.description}</span>
-                            <span className="flex items-center gap-2">
-                                <span className="tabular-nums">{formatMoney(charge.amount)}</span>
-                                {editable && (
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="size-8"
-                                        onClick={() =>
-                                            router.delete(route('service-jobs.charges.destroy', [job.id, charge.id]), { preserveScroll: true })
-                                        }
-                                        aria-label={`Remove ${charge.description}`}
-                                    >
-                                        <Trash2 className="size-4" />
-                                    </Button>
-                                )}
-                            </span>
-                        </li>
-                    ))}
+                    {job.charges?.map((charge) => <ChargeRow key={charge.id} job={job} charge={charge} editable={editable} />)}
                 </ul>
             </div>
             {editable && (

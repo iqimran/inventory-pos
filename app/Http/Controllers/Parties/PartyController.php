@@ -91,7 +91,8 @@ class PartyController extends Controller
 
         return Inertia::render('parties/show', [
             'party' => new PartyResource($party),
-            'statement' => $statement->build($party, $from, $to),
+            // Paginated: a long range (e.g. a year of a wholesale customer) never loads every entry.
+            'statement' => $statement->build($party, $from, $to, perPage: 50, page: max(1, $request->integer('statement_page', 1))),
             'summary' => [
                 'balance' => $party->balance,
                 'available_advance' => $allocator->availableAdvance($party),
