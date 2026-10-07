@@ -9,6 +9,7 @@ use App\Http\Controllers\BrandingController;
 use App\Http\Controllers\Catalog\BrandController;
 use App\Http\Controllers\Catalog\CategoryController;
 use App\Http\Controllers\Catalog\ProductController;
+use App\Http\Controllers\Catalog\QuickProductController;
 use App\Http\Controllers\Catalog\SubcategoryController;
 use App\Http\Controllers\Catalog\UnitController;
 use App\Http\Controllers\Expenses\ExpenseController;
@@ -73,6 +74,9 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('units', UnitController::class)->only(['index', 'store', 'update', 'destroy']);
     });
 
+    // Quick add from other workflows (registered before the resource so 'quick' is not read as a product id).
+    Route::get('products/quick/options', [QuickProductController::class, 'options'])->name('products.quick.options');
+    Route::post('products/quick', [QuickProductController::class, 'store'])->name('products.quick.store');
     Route::resource('products', ProductController::class);
     Route::post('products/{product}/barcode', [ProductBarcodeController::class, 'store'])->name('products.barcode.store');
 

@@ -4,12 +4,14 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { QuickProductDialog } from '@/features/products/quick-product-dialog';
 import { type Product } from '@/features/products/types';
 import { type SelectOption } from '@/features/purchasing/types';
+import { useCan } from '@/hooks/use-can';
 import AppLayout from '@/layouts/app-layout';
 import { formatMoney, fromCents, toCents } from '@/lib/format';
 import { Head, router, useForm } from '@inertiajs/react';
-import { LoaderCircle, ScanBarcode, Trash2 } from 'lucide-react';
+import { LoaderCircle, PackagePlus, ScanBarcode, Trash2 } from 'lucide-react';
 import { FormEventHandler, useState } from 'react';
 
 interface CreatePurchaseProps {
@@ -34,6 +36,8 @@ const selectClass = 'border-input bg-background h-9 w-full rounded-md border px-
 export default function CreatePurchase({ suppliers, methods, supplier, results, q }: CreatePurchaseProps) {
     const [search, setSearch] = useState(q);
     const [lines, setLines] = useState<Line[]>([]);
+    const [creatingProduct, setCreatingProduct] = useState(false);
+    const can = useCan();
     const matches = 'data' in results ? results.data : [];
 
     const form = useForm({
@@ -166,7 +170,22 @@ export default function CreatePurchase({ suppliers, methods, supplier, results, 
                         <Button type="submit" variant="secondary">
                             Find
                         </Button>
+                        {can('products.manage') && (
+                            <Button type="button" variant="outline" onClick={() => setCreatingProduct(true)}>
+                                <PackagePlus className="size-4" />
+                                New product
+                            </Button>
+                        )}
                     </form>
+                    <QuickProductDialog
+                        open={creatingProduct}
+                        onOpenChange={setCreatingProduct}
+                        initialTerm={search}
+                        onCreated={(product) => {
+                            addLine(product);
+                            router.reload({ only: ['results', 'q'], data: { q: '' } });
+                        }}
+                    />
                     {matches.length > 0 && (
                         <ul className="divide-y rounded-lg border">
                             {matches.map((product) => (
@@ -188,7 +207,19 @@ export default function CreatePurchase({ suppliers, methods, supplier, results, 
                             ))}
                         </ul>
                     )}
-                    {q && matches.length === 0 && <p className="text-muted-foreground text-sm">No active products match “{q}”.</p>}
+                    {q && matches.length === 0 && (
+                        <p className="text-muted-foreground text-sm">
+                            No active products match “{q}”.
+                            {can('products.manage') && (
+                                <>
+                                    {' '}
+                                    <button type="button" className="text-primary hover:underline" onClick={() => setCreatingProduct(true)}>
+                                        Create it as a new product
+                                    </button>
+                                </>
+                            )}
+                        </p>
+                    )}
 
                     <div className="overflow-x-auto rounded-lg border">
                         <table className="w-full text-sm">

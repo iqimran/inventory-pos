@@ -6,6 +6,7 @@ use App\Actions\Products\AssignProductBarcode;
 use App\Actions\Products\DeleteProduct;
 use App\Actions\Products\SaveProduct;
 use App\Domain\Barcode\BarcodeRenderer;
+use App\Domain\Inventory\ProductFormOptions;
 use App\Domain\Inventory\ProductSearch;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Catalog\ProductRequest;
@@ -16,7 +17,6 @@ use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\Subcategory;
-use App\Models\Unit;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
@@ -35,11 +35,11 @@ class ProductController extends Controller
         ]);
     }
 
-    public function create(): Response
+    public function create(ProductFormOptions $formOptions): Response
     {
         Gate::authorize('create', Product::class);
 
-        return Inertia::render('products/create', ['options' => $this->formOptions()]);
+        return Inertia::render('products/create', ['options' => $formOptions->for()]);
     }
 
     public function store(ProductRequest $request, SaveProduct $saveProduct, AssignProductBarcode $assignBarcode): RedirectResponse
@@ -68,13 +68,13 @@ class ProductController extends Controller
         ]);
     }
 
-    public function edit(Product $product): Response
+    public function edit(Product $product, ProductFormOptions $formOptions): Response
     {
         Gate::authorize('update', $product);
 
         return Inertia::render('products/edit', [
             'product' => new ProductResource($product),
-            'options' => $this->formOptions($product),
+            'options' => $formOptions->for($product),
         ]);
     }
 
@@ -107,26 +107,6 @@ class ProductController extends Controller
             'categories' => Category::query()->orderBy('name')->get(['id', 'name']),
             'subcategories' => Subcategory::query()->orderBy('name')->get(['id', 'category_id', 'name']),
             'brands' => Brand::query()->orderBy('name')->get(['id', 'name']),
-        ];
-    }
-
-    /**
-     * Active master data, plus the product's current (possibly inactive) values.
-     *
-     * @return array<string, mixed>
-     */
-    private function formOptions(?Product $product = null): array
-    {
-        $options = fn (string $model, ?int $current, array $columns) => $model::query()
-            ->where(fn ($q) => $q->where('is_active', true)->when($current, fn ($q) => $q->orWhere('id', $current)))
-            ->orderBy('name')
-            ->get($columns);
-
-        return [
-            'categories' => $options(Category::class, $product?->category_id, ['id', 'name']),
-            'subcategories' => $options(Subcategory::class, $product?->subcategory_id, ['id', 'category_id', 'name']),
-            'brands' => $options(Brand::class, $product?->brand_id, ['id', 'name']),
-            'units' => $options(Unit::class, $product?->unit_id, ['id', 'name', 'short_name']),
         ];
     }
 }
