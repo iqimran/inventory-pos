@@ -146,7 +146,9 @@ export default function ShowExpense({ expense: { data: expense }, types }: ShowE
                     </DialogDescription>
                     <form onSubmit={submitVoid} className="space-y-4">
                         <div className="grid gap-2">
-                            <Label htmlFor="reason">Reason</Label>
+                            <Label htmlFor="reason" required>
+                                Reason
+                            </Label>
                             <Input id="reason" value={form.data.reason} onChange={(e) => form.setData('reason', e.target.value)} required />
                             <InputError message={form.errors.reason} />
                         </div>

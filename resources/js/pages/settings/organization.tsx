@@ -119,7 +119,9 @@ export default function OrganizationSettings({ organization }: { organization: O
                         </div>
 
                         <div className="grid gap-2">
-                            <Label htmlFor="name">Organization name</Label>
+                            <Label htmlFor="name" required>
+                                Organization name
+                            </Label>
                             <Input id="name" value={data.name} onChange={(e) => setData('name', e.target.value)} required placeholder="Shop name" />
                             <InputError message={errors.name} />
                         </div>

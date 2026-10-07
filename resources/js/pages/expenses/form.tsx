@@ -56,7 +56,9 @@ export default function ExpenseForm({ expense: wrapped, types, methods }: Expens
 
                 <div className="grid gap-4 sm:grid-cols-2">
                     <div className="grid gap-2">
-                        <Label htmlFor="expense_type_id">Expense type</Label>
+                        <Label htmlFor="expense_type_id" required>
+                            Expense type
+                        </Label>
                         <select
                             id="expense_type_id"
                             className={selectClass}
@@ -74,7 +76,9 @@ export default function ExpenseForm({ expense: wrapped, types, methods }: Expens
                         <InputError message={form.errors.expense_type_id} />
                     </div>
                     <div className="grid gap-2">
-                        <Label htmlFor="amount">Amount</Label>
+                        <Label htmlFor="amount" required>
+                            Amount
+                        </Label>
                         <Input
                             id="amount"
                             type="number"
@@ -87,7 +91,9 @@ export default function ExpenseForm({ expense: wrapped, types, methods }: Expens
                         <InputError message={form.errors.amount} />
                     </div>
                     <div className="grid gap-2">
-                        <Label htmlFor="expense_date">Date</Label>
+                        <Label htmlFor="expense_date" required>
+                            Date
+                        </Label>
                         <Input
                             id="expense_date"
                             type="date"
@@ -99,7 +105,9 @@ export default function ExpenseForm({ expense: wrapped, types, methods }: Expens
                         <InputError message={form.errors.expense_date} />
                     </div>
                     <div className="grid gap-2">
-                        <Label htmlFor="payment_method">Payment method</Label>
+                        <Label htmlFor="payment_method" required>
+                            Payment method
+                        </Label>
                         <select
                             id="payment_method"
                             className={selectClass}

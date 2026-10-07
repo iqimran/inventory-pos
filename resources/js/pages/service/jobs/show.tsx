@@ -221,7 +221,9 @@ function StatusActions({ job }: { job: ServiceJob }) {
                         {target?.value === 'WAITING_FOR_APPROVAL' && (
                             <>
                                 <div className="grid gap-2">
-                                    <Label htmlFor="diagnosis">Diagnosis</Label>
+                                    <Label htmlFor="diagnosis" required>
+                                        Diagnosis
+                                    </Label>
                                     <textarea
                                         id="diagnosis"
                                         className={textareaClass}
@@ -247,7 +249,9 @@ function StatusActions({ job }: { job: ServiceJob }) {
                         )}
                         {approving && (
                             <div className="grid gap-2">
-                                <Label htmlFor="approved_amount">Amount approved by the customer</Label>
+                                <Label htmlFor="approved_amount" required>
+                                    Amount approved by the customer
+                                </Label>
                                 <Input
                                     id="approved_amount"
                                     type="number"
@@ -262,7 +266,9 @@ function StatusActions({ job }: { job: ServiceJob }) {
                         )}
                         {target?.value === 'CANCELLED' ? (
                             <div className="grid gap-2">
-                                <Label htmlFor="reason">Reason</Label>
+                                <Label htmlFor="reason" required>
+                                    Reason
+                                </Label>
                                 <Input id="reason" value={form.data.reason} onChange={(e) => form.setData('reason', e.target.value)} required />
                                 <InputError message={form.errors.reason} />
                             </div>
@@ -390,7 +396,9 @@ function JobDetails({ job, technicians, editable }: { job: ServiceJob; technicia
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
                 <div className="grid gap-2">
-                    <Label htmlFor="complaint-edit">Complaint</Label>
+                    <Label htmlFor="complaint-edit" required>
+                        Complaint
+                    </Label>
                     <textarea
                         id="complaint-edit"
                         className={textareaClass}

@@ -421,7 +421,9 @@ export default function Pos({ mode: initialMode, methods, canOverridePrice }: Po
                     <div className="grid gap-3">
                         <div className="grid grid-cols-2 gap-2">
                             <div className="grid gap-1">
-                                <Label htmlFor="method">Method</Label>
+                                <Label htmlFor="method" required>
+                                    Method
+                                </Label>
                                 <select
                                     id="method"
                                     value={method}

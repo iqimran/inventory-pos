@@ -110,7 +110,9 @@ export default function CreatePurchase({ suppliers, methods, supplier, results, 
 
                 <section className="grid gap-4 md:grid-cols-4">
                     <div className="grid gap-2 md:col-span-2">
-                        <Label htmlFor="party_id">Supplier</Label>
+                        <Label htmlFor="party_id" required>
+                            Supplier
+                        </Label>
                         <select
                             id="party_id"
                             className={selectClass}
@@ -129,7 +131,9 @@ export default function CreatePurchase({ suppliers, methods, supplier, results, 
                         <InputError message={form.errors.party_id} />
                     </div>
                     <div className="grid gap-2">
-                        <Label htmlFor="purchase_date">Purchase date</Label>
+                        <Label htmlFor="purchase_date" required>
+                            Purchase date
+                        </Label>
                         <Input
                             id="purchase_date"
                             type="date"

@@ -82,7 +82,7 @@ export default function CollectDue({ methods, customer, saleId, serviceInvoiceId
                 />
 
                 <div className="grid gap-2">
-                    <Label>Customer</Label>
+                    <Label required>Customer</Label>
                     <CustomerPicker
                         value={customer ? { id: customer.id, name: customer.name, phone: customer.phone, balance: customer.balance } : null}
                         onChange={selectCustomer}
@@ -119,7 +119,9 @@ export default function CollectDue({ methods, customer, saleId, serviceInvoiceId
 
                         <div className="grid gap-4 sm:grid-cols-3">
                             <div className="grid gap-2">
-                                <Label htmlFor="amount">Amount</Label>
+                                <Label htmlFor="amount" required>
+                                    Amount
+                                </Label>
                                 <Input
                                     id="amount"
                                     type="number"
@@ -139,7 +141,9 @@ export default function CollectDue({ methods, customer, saleId, serviceInvoiceId
                                 <InputError message={form.errors.amount} />
                             </div>
                             <div className="grid gap-2">
-                                <Label htmlFor="method">Method</Label>
+                                <Label htmlFor="method" required>
+                                    Method
+                                </Label>
                                 <select
                                     id="method"
                                     className={selectClass}
@@ -154,7 +158,9 @@ export default function CollectDue({ methods, customer, saleId, serviceInvoiceId
                                 </select>
                             </div>
                             <div className="grid gap-2">
-                                <Label htmlFor="date">Date</Label>
+                                <Label htmlFor="date" required>
+                                    Date
+                                </Label>
                                 <Input id="date" type="date" value={form.data.date} onChange={(e) => form.setData('date', e.target.value)} />
                                 <InputError message={form.errors.date} />
                             </div>

@@ -282,7 +282,9 @@ export default function ShowParty({ party: { data: party }, statement, summary }
                     <DialogDescription>Recorded permanently with your name and reason.</DialogDescription>
                     <form onSubmit={submitAdjustment} className="space-y-4">
                         <div className="grid gap-2">
-                            <Label htmlFor="side">Direction</Label>
+                            <Label htmlFor="side" required>
+                                Direction
+                            </Label>
                             <select
                                 id="side"
                                 className="border-input bg-background h-9 rounded-md border px-3 text-sm"
@@ -294,7 +296,9 @@ export default function ShowParty({ party: { data: party }, statement, summary }
                             </select>
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="amount">Amount</Label>
+                            <Label htmlFor="amount" required>
+                                Amount
+                            </Label>
                             <Input
                                 id="amount"
                                 type="number"
@@ -307,7 +311,9 @@ export default function ShowParty({ party: { data: party }, statement, summary }
                             <InputError message={adjustment.errors.amount} />
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="reason">Reason</Label>
+                            <Label htmlFor="reason" required>
+                                Reason
+                            </Label>
                             <Input
                                 id="reason"
                                 value={adjustment.data.reason}

@@ -70,14 +70,24 @@ export default function CreateServiceJob({ technicians, customer: initialCustome
                 <Heading title="New service job" description="Receive a device for repair." />
 
                 <section className="space-y-3">
-                    <h3 className="font-medium">1. Customer</h3>
+                    <h3 className="font-medium">
+                        1. Customer
+                        <span className="text-destructive ml-0.5" aria-hidden="true">
+                            *
+                        </span>
+                    </h3>
                     <CustomerPicker value={customer} onChange={selectCustomer} placeholder="Search customer by name or phone" />
                     <InputError message={form.errors.party_id} />
                 </section>
 
                 {customer && (
                     <section className="space-y-3">
-                        <h3 className="font-medium">2. Device</h3>
+                        <h3 className="font-medium">
+                            2. Device
+                            <span className="text-destructive ml-0.5" aria-hidden="true">
+                                *
+                            </span>
+                        </h3>
                         <div className="grid gap-2 sm:grid-cols-2">
                             {devices.map((device) => (
                                 <label
@@ -128,7 +138,9 @@ export default function CreateServiceJob({ technicians, customer: initialCustome
                 <section className="space-y-4">
                     <h3 className="font-medium">3. Job</h3>
                     <div className="grid gap-2">
-                        <Label htmlFor="complaint">Customer complaint</Label>
+                        <Label htmlFor="complaint" required>
+                            Customer complaint
+                        </Label>
                         <textarea
                             id="complaint"
                             className={textareaClass}

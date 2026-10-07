@@ -71,7 +71,9 @@ export default function CreateAdjustment({ reasons, selected, results, q }: Crea
                 <Heading title="New stock adjustment" description="Every adjustment is recorded as a permanent stock movement with its reason." />
 
                 <section className="space-y-3">
-                    <Label htmlFor="product-search">Product</Label>
+                    <Label htmlFor="product-search" required>
+                        Product
+                    </Label>
                     <form onSubmit={find} className="flex gap-2">
                         <div className="relative flex-1">
                             <ScanBarcode className="text-muted-foreground absolute top-2.5 left-2.5 size-4" />
@@ -129,7 +131,9 @@ export default function CreateAdjustment({ reasons, selected, results, q }: Crea
 
                         <div className="grid gap-4 sm:grid-cols-3">
                             <div className="grid gap-2">
-                                <Label htmlFor="direction">Direction</Label>
+                                <Label htmlFor="direction" required>
+                                    Direction
+                                </Label>
                                 <select
                                     id="direction"
                                     className={selectClass}
@@ -142,7 +146,9 @@ export default function CreateAdjustment({ reasons, selected, results, q }: Crea
                                 <InputError message={errors.direction} />
                             </div>
                             <div className="grid gap-2">
-                                <Label htmlFor="quantity">Quantity</Label>
+                                <Label htmlFor="quantity" required>
+                                    Quantity
+                                </Label>
                                 <Input
                                     id="quantity"
                                     type="number"
@@ -155,7 +161,9 @@ export default function CreateAdjustment({ reasons, selected, results, q }: Crea
                                 <InputError message={errors.quantity} />
                             </div>
                             <div className="grid gap-2">
-                                <Label htmlFor="reason">Reason</Label>
+                                <Label htmlFor="reason" required>
+                                    Reason
+                                </Label>
                                 <select
                                     id="reason"
                                     className={selectClass}
@@ -175,7 +183,9 @@ export default function CreateAdjustment({ reasons, selected, results, q }: Crea
                         </div>
 
                         <div className="grid gap-2">
-                            <Label htmlFor="notes">Notes {data.reason === 'OTHER' ? '(required)' : '(optional)'}</Label>
+                            <Label htmlFor="notes" required={data.reason === 'OTHER'}>
+                                Notes {data.reason === 'OTHER' ? '' : '(optional)'}
+                            </Label>
                             <textarea
                                 id="notes"
                                 rows={3}
