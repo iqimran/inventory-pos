@@ -234,9 +234,9 @@ class ServiceInvoiceTest extends TestCase
 
     public function test_a_job_without_parts_or_charges_cannot_be_invoiced()
     {
-        $this->makeReady($this->job);
+        $job = $this->makeReady($this->openJob(['estimated_amount' => '0']));
 
-        $this->invoice($this->job)->assertSessionHasErrors('job');
+        $this->invoice($job)->assertSessionHasErrors('job');
         $this->assertSame(0, ServiceInvoice::count());
     }
 

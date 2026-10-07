@@ -37,6 +37,8 @@ export interface ServiceJobCharge {
     id: number;
     description: string;
     amount: string;
+    /** Placeholder billing the job estimate; replaced when real parts or charges are added. */
+    is_estimate: boolean;
 }
 
 export interface ServiceJob {

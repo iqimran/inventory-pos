@@ -3,6 +3,7 @@
 namespace App\Actions\MobileService;
 
 use App\Domain\Audit\AuditTrail;
+use App\Domain\MobileService\EstimateCharge;
 use App\Domain\MobileService\ServiceJobGuard;
 use App\Models\Product;
 use App\Models\ServiceJob;
@@ -20,7 +21,11 @@ use Illuminate\Validation\ValidationException;
  */
 class SaveServiceJobPart
 {
-    public function __construct(private readonly ServiceJobGuard $guard, private readonly AuditTrail $audit) {}
+    public function __construct(
+        private readonly ServiceJobGuard $guard,
+        private readonly AuditTrail $audit,
+        private readonly EstimateCharge $estimateCharge,
+    ) {}
 
     /**
      * @param  array{product_id?: int, quantity: int, unit_price?: ?string}  $data
@@ -67,6 +72,7 @@ class SaveServiceJobPart
             if ($item) {
                 $item->update($attributes);
             } else {
+                $this->estimateCharge->release($job);
                 $item = $job->items()->create([
                     'product_id' => $product->id,
                     'list_price' => $listPrice,

@@ -2,6 +2,7 @@
 
 namespace App\Actions\MobileService;
 
+use App\Domain\MobileService\EstimateCharge;
 use App\Domain\MobileService\ServiceJobGuard;
 use App\Enums\ServiceJobStatus;
 use App\Models\ServiceJob;
@@ -21,7 +22,10 @@ use Illuminate\Validation\ValidationException;
  */
 class ChangeServiceJobStatus
 {
-    public function __construct(private readonly ServiceJobGuard $guard) {}
+    public function __construct(
+        private readonly ServiceJobGuard $guard,
+        private readonly EstimateCharge $estimateCharge,
+    ) {}
 
     /**
      * @param  array{notes?: ?string, diagnosis?: ?string, estimated_amount?: ?string, approved_amount?: ?string, reason?: ?string}  $data
@@ -55,6 +59,10 @@ class ChangeServiceJobStatus
             };
 
             $job->update($changes);
+
+            if ($job->wasChanged('estimated_amount')) {
+                $this->estimateCharge->sync($job);
+            }
 
             $job->statusLogs()->create([
                 'from_status' => $from,

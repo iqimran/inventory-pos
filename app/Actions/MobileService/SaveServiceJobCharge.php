@@ -2,6 +2,7 @@
 
 namespace App\Actions\MobileService;
 
+use App\Domain\MobileService\EstimateCharge;
 use App\Domain\MobileService\ServiceJobGuard;
 use App\Models\ServiceJob;
 use App\Models\ServiceJobCharge;
@@ -15,7 +16,10 @@ use Illuminate\Validation\ValidationException;
  */
 class SaveServiceJobCharge
 {
-    public function __construct(private readonly ServiceJobGuard $guard) {}
+    public function __construct(
+        private readonly ServiceJobGuard $guard,
+        private readonly EstimateCharge $estimateCharge,
+    ) {}
 
     /**
      * @param  array{description: string, amount: string}  $data
@@ -29,8 +33,10 @@ class SaveServiceJobCharge
             $attributes = ['description' => trim($data['description']), 'amount' => Money::of($data['amount'])];
 
             if ($charge) {
-                $charge->update($attributes);
+                // Edited by hand: no longer follows the estimate.
+                $charge->update([...$attributes, 'is_estimate' => false]);
             } else {
+                $this->estimateCharge->release($job);
                 $charge = $job->charges()->create($attributes);
             }
 

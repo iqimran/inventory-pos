@@ -2,6 +2,7 @@
 
 namespace App\Actions\MobileService;
 
+use App\Domain\MobileService\EstimateCharge;
 use App\Domain\MobileService\ServiceJobGuard;
 use App\Models\ServiceJob;
 use App\Support\Money;
@@ -14,7 +15,10 @@ use Illuminate\Validation\ValidationException;
  */
 class UpdateServiceJob
 {
-    public function __construct(private readonly ServiceJobGuard $guard) {}
+    public function __construct(
+        private readonly ServiceJobGuard $guard,
+        private readonly EstimateCharge $estimateCharge,
+    ) {}
 
     /**
      * @param  array{technician_id?: ?int, complaint: string, diagnosis?: ?string, estimated_amount?: ?string,
@@ -39,6 +43,10 @@ class UpdateServiceJob
                 'promised_at' => $data['promised_at'] ?? null,
                 'notes' => $data['notes'] ?? null,
             ]);
+
+            if ($job->wasChanged('estimated_amount')) {
+                $this->estimateCharge->sync($job);
+            }
 
             return $job;
         });
