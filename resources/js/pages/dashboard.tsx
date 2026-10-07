@@ -1,5 +1,6 @@
 import Heading from '@/components/heading';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { type Outstanding } from '@/features/reports/outstanding';
 import { ReportFilters } from '@/features/reports/report-filters';
 import { StatCard } from '@/features/reports/stat-card';
 import { type RevenuePeriod } from '@/features/reports/types';
@@ -18,7 +19,7 @@ interface Summary {
     trend?: RevenuePeriod[];
     purchases?: { amount: string; documents: number; returns: string };
     expenses?: { amount: string; entries: number };
-    outstanding?: { receivable: string; receivable_parties: number; payable: string; payable_parties: number };
+    outstanding?: Outstanding;
     low_stock?: { count: number; products: { id: number; name: string; sku: string; stock: number; reorder_level: number }[] };
 }
 
@@ -188,15 +189,15 @@ export default function Dashboard({ summary, filters }: DashboardProps) {
                     {summary.outstanding && (
                         <>
                             <StatCard
-                                label="Receivables (now)"
-                                value={formatMoney(summary.outstanding.receivable)}
-                                sub={`${summary.outstanding.receivable_parties} part(ies) owe the shop`}
+                                label="Customer dues (now)"
+                                value={formatMoney(summary.outstanding.customer_receivable)}
+                                sub={`${summary.outstanding.customer_receivable_parties} customer(s) owe the shop${toCents(summary.outstanding.customer_credit) > 0 ? ` · store credit ${formatMoney(summary.outstanding.customer_credit)}` : ''}`}
                                 href={route('reports.parties', { ...range, side: 'receivable' })}
                             />
                             <StatCard
                                 label="Supplier payables (now)"
-                                value={formatMoney(summary.outstanding.payable)}
-                                sub={`The shop owes ${summary.outstanding.payable_parties} part(ies)`}
+                                value={formatMoney(summary.outstanding.supplier_payable)}
+                                sub={`The shop owes ${summary.outstanding.supplier_payable_parties} supplier(s)${toCents(summary.outstanding.supplier_advance) > 0 ? ` · advances held ${formatMoney(summary.outstanding.supplier_advance)}` : ''}`}
                                 href={route('reports.parties', { ...range, side: 'payable' })}
                             />
                         </>

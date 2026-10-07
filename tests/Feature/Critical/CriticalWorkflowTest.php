@@ -219,8 +219,9 @@ class CriticalWorkflowTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->where('summary.combined_revenue', '3860.00')
                 // Customer owes 500; the supplier holds 700 of the shop's money (advance + returned goods).
-                ->where('summary.outstanding.receivable', '1200.00')
-                ->where('summary.outstanding.payable', '0.00'));
+                ->where('summary.outstanding.customer_receivable', '500.00')
+                ->where('summary.outstanding.supplier_advance', '700.00')
+                ->where('summary.outstanding.supplier_payable', '0.00'));
 
         // Stock report closing balances equal current stock.
         $this->get('/reports/stock?from=2026-09-01&to=2026-09-30')
