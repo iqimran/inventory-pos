@@ -78,7 +78,6 @@ class ServiceInvoiceController extends Controller
                 'party',
                 'serviceJob.device',
                 'items' => fn ($query) => $query->with('product:id,sku')->orderBy('id'),
-                'allocations.payment',
                 'creator:id,name',
             ])),
             'shop' => $organization->documentHeader(),

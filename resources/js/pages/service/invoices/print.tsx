@@ -128,8 +128,6 @@ export default function PrintServiceInvoice({ invoice: { data: invoice }, shop, 
                             {device.imei2 && <Pair label="IMEI 2" value={device.imei2} />}
                             {device.serial_no && <Pair label="Serial" value={device.serial_no} />}
                         </dl>
-                        {invoice.job?.complaint && <p className="mt-1">Complaint: {invoice.job.complaint}</p>}
-                        {invoice.job?.diagnosis && <p>Work done: {invoice.job.diagnosis}</p>}
                     </>
                 )}
 
@@ -138,34 +136,18 @@ export default function PrintServiceInvoice({ invoice: { data: invoice }, shop, 
                 <LineSection type="PRODUCT" lines={parts} />
                 <LineSection type="SERVICE" lines={services} />
 
+                {/* Parts and service subtotals are printed with their sections above. */}
                 <dl className="space-y-0.5 border-t border-black pt-1">
-                    <Pair
-                        label="Parts / products"
-                        value={formatMoney(fromCents(parts.reduce((sum, line) => sum + toCents(line.line_subtotal), 0)))}
-                    />
-                    <Pair
-                        label="Service / labor"
-                        value={formatMoney(fromCents(services.reduce((sum, line) => sum + toCents(line.line_subtotal), 0)))}
-                    />
-                    <Pair label="Subtotal" value={formatMoney(invoice.subtotal)} />
-                    {toCents(invoice.discount) > 0 && <Pair label="Discount" value={`−${formatMoney(invoice.discount)}`} />}
+                    {toCents(invoice.discount) > 0 && (
+                        <>
+                            <Pair label="Subtotal" value={formatMoney(invoice.subtotal)} />
+                            <Pair label="Discount" value={`−${formatMoney(invoice.discount)}`} />
+                        </>
+                    )}
                     <Pair label="TOTAL" value={formatMoney(invoice.total)} strong />
-                    {invoice.allocations?.map((allocation) => (
-                        <Pair
-                            key={allocation.id}
-                            label={`Paid ${allocation.payment.method_label} ${new Date(allocation.payment.paid_at).toLocaleDateString()}`}
-                            value={formatMoney(allocation.amount)}
-                        />
-                    ))}
                     <Pair label="Total paid" value={formatMoney(invoice.paid_amount)} />
-                    <Pair label="Due" value={formatMoney(invoice.due_amount)} strong />
+                    {toCents(invoice.due_amount) > 0 && <Pair label="Due" value={formatMoney(invoice.due_amount)} strong />}
                 </dl>
-
-                {invoice.payment_status !== 'PAID' && (
-                    <p className="mt-2 text-center font-bold">
-                        {invoice.payment_status_label.toUpperCase()} — balance due {formatMoney(invoice.due_amount)}
-                    </p>
-                )}
 
                 {invoice.notes && <p className="mt-2">Note: {invoice.notes}</p>}
 
