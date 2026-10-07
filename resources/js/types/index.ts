@@ -19,8 +19,8 @@ export interface NavItem {
     url: string;
     icon?: LucideIcon | null;
     isActive?: boolean;
-    /** Permission required to see this item. Visibility only; the server still authorizes. */
-    permission?: string;
+    /** Permission(s) required to see this item (all of them). Visibility only; the server still authorizes. */
+    permission?: string | string[];
 }
 
 export interface FlashMessages {

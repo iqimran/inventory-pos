@@ -8,16 +8,18 @@ import { formatMoney, toCents } from '@/lib/format';
 import { type BreadcrumbItem, type SharedData } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
 
+/** Sections are present only when the user may see them (server-side ReportAccess). */
 interface Summary {
-    product_sales: { amount: string; quantity: number; gross_profit: string | null };
-    service_revenue: string;
-    combined_revenue: string;
-    documents: { sales: number; service_invoices: number; sale_returns: number; total: string; matches: boolean };
-    purchases: { amount: string; documents: number; returns: string };
-    expenses: { amount: string; entries: number };
-    outstanding: { receivable: string; receivable_parties: number; payable: string; payable_parties: number };
-    low_stock: { count: number; products: { id: number; name: string; sku: string; stock: number; reorder_level: number }[] };
-    trend: RevenuePeriod[];
+    product_sales?: { amount: string; quantity: number };
+    gross_profit?: string;
+    service_revenue?: string;
+    combined_revenue?: string;
+    documents?: { sales: number; service_invoices: number; sale_returns: number; total: string; matches: boolean };
+    trend?: RevenuePeriod[];
+    purchases?: { amount: string; documents: number; returns: string };
+    expenses?: { amount: string; entries: number };
+    outstanding?: { receivable: string; receivable_parties: number; payable: string; payable_parties: number };
+    low_stock?: { count: number; products: { id: number; name: string; sku: string; stock: number; reorder_level: number }[] };
 }
 
 interface DashboardProps {
@@ -139,41 +141,43 @@ export default function Dashboard({ summary, filters }: DashboardProps) {
                 </div>
 
                 <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                    <StatCard
-                        label="Product sales"
-                        value={formatMoney(summary.product_sales.amount)}
-                        sub={`${summary.product_sales.quantity} unit(s) · POS + service parts − returns`}
-                        href={route('reports.product-revenue', range)}
-                    />
-                    <StatCard
-                        label="Mobile service revenue"
-                        value={formatMoney(summary.service_revenue)}
-                        sub="Service / labour lines"
-                        href={route('reports.service-revenue', range)}
-                    />
-                    <StatCard
-                        label="Combined revenue"
-                        value={formatMoney(summary.combined_revenue)}
-                        sub={`${summary.documents.sales} sale(s), ${summary.documents.service_invoices} service invoice(s)`}
-                        href={route('reports.revenue', range)}
-                        emphasis
-                    />
-                    {summary.product_sales.gross_profit !== null ? (
+                    {summary.product_sales && (
                         <StatCard
-                            label="Product gross profit"
-                            value={formatMoney(summary.product_sales.gross_profit)}
-                            sub="Product sales − cost of goods"
+                            label="Product sales"
+                            value={formatMoney(summary.product_sales.amount)}
+                            sub={`${summary.product_sales.quantity} unit(s) · POS + service parts − returns`}
+                            href={route('reports.product-revenue', range)}
                         />
-                    ) : (
-                        <StatCard label="Expenses" value={formatMoney(summary.expenses.amount)} sub={`${summary.expenses.entries} entr(ies)`} />
                     )}
-                    <StatCard
-                        label="Purchases"
-                        value={formatMoney(summary.purchases.amount)}
-                        sub={`${summary.purchases.documents} purchase(s)${toCents(summary.purchases.returns) > 0 ? `, returns −${formatMoney(summary.purchases.returns)}` : ''}`}
-                        href={route('purchases.index')}
-                    />
-                    {summary.product_sales.gross_profit !== null && (
+                    {summary.service_revenue !== undefined && (
+                        <StatCard
+                            label="Mobile service revenue"
+                            value={formatMoney(summary.service_revenue)}
+                            sub="Service / labour lines"
+                            href={route('reports.service-revenue', range)}
+                        />
+                    )}
+                    {summary.combined_revenue !== undefined && summary.documents && (
+                        <StatCard
+                            label="Combined revenue"
+                            value={formatMoney(summary.combined_revenue)}
+                            sub={`${summary.documents.sales} sale(s), ${summary.documents.service_invoices} service invoice(s)`}
+                            href={route('reports.revenue', range)}
+                            emphasis
+                        />
+                    )}
+                    {summary.gross_profit !== undefined && (
+                        <StatCard label="Product gross profit" value={formatMoney(summary.gross_profit)} sub="Product sales − cost of goods" />
+                    )}
+                    {summary.purchases && (
+                        <StatCard
+                            label="Purchases"
+                            value={formatMoney(summary.purchases.amount)}
+                            sub={`${summary.purchases.documents} purchase(s)${toCents(summary.purchases.returns) > 0 ? `, returns −${formatMoney(summary.purchases.returns)}` : ''}`}
+                            href={route('purchases.index')}
+                        />
+                    )}
+                    {summary.expenses && (
                         <StatCard
                             label="Expenses"
                             value={formatMoney(summary.expenses.amount)}
@@ -181,52 +185,62 @@ export default function Dashboard({ summary, filters }: DashboardProps) {
                             href={route('expenses.report', range)}
                         />
                     )}
-                    <StatCard
-                        label="Receivables (now)"
-                        value={formatMoney(summary.outstanding.receivable)}
-                        sub={`${summary.outstanding.receivable_parties} part(ies) owe the shop`}
-                        href={route('reports.parties', { ...range, side: 'receivable' })}
-                    />
-                    <StatCard
-                        label="Supplier payables (now)"
-                        value={formatMoney(summary.outstanding.payable)}
-                        sub={`The shop owes ${summary.outstanding.payable_parties} part(ies)`}
-                        href={route('reports.parties', { ...range, side: 'payable' })}
-                    />
+                    {summary.outstanding && (
+                        <>
+                            <StatCard
+                                label="Receivables (now)"
+                                value={formatMoney(summary.outstanding.receivable)}
+                                sub={`${summary.outstanding.receivable_parties} part(ies) owe the shop`}
+                                href={route('reports.parties', { ...range, side: 'receivable' })}
+                            />
+                            <StatCard
+                                label="Supplier payables (now)"
+                                value={formatMoney(summary.outstanding.payable)}
+                                sub={`The shop owes ${summary.outstanding.payable_parties} part(ies)`}
+                                href={route('reports.parties', { ...range, side: 'payable' })}
+                            />
+                        </>
+                    )}
                 </section>
 
-                <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
-                    <div className="space-y-3 rounded-lg border p-4">
-                        <h3 className="font-medium">Revenue {filters.group_by === 'month' ? 'by month' : 'by day'}</h3>
-                        <RevenueTrend rows={summary.trend} tableHref={route('reports.revenue', { ...range, group_by: filters.group_by })} />
-                    </div>
-
-                    <div className="rounded-lg border">
-                        <div className="flex items-center justify-between border-b px-4 py-2">
-                            <h3 className="text-sm font-medium">Low stock</h3>
-                            <Link href={route('inventory.low-stock.index')} className="text-muted-foreground text-xs hover:underline">
-                                {summary.low_stock.count} product(s) →
-                            </Link>
-                        </div>
-                        {summary.low_stock.products.length === 0 && (
-                            <p className="text-muted-foreground px-4 py-3 text-sm">Nothing below its reorder level.</p>
+                {(summary.trend || summary.low_stock) && (
+                    <section className={summary.trend && summary.low_stock ? 'grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]' : 'grid gap-6'}>
+                        {summary.trend && (
+                            <div className="space-y-3 rounded-lg border p-4">
+                                <h3 className="font-medium">Revenue {filters.group_by === 'month' ? 'by month' : 'by day'}</h3>
+                                <RevenueTrend rows={summary.trend} tableHref={route('reports.revenue', { ...range, group_by: filters.group_by })} />
+                            </div>
                         )}
-                        <ul className="divide-y text-sm">
-                            {summary.low_stock.products.map((product) => (
-                                <li key={product.id} className="flex items-center justify-between gap-2 px-4 py-2">
-                                    <Link href={route('products.show', product.id)} className="min-w-0 truncate hover:underline">
-                                        {product.name}
-                                    </Link>
-                                    <span className={product.stock <= 0 ? 'text-destructive tabular-nums' : 'tabular-nums'}>
-                                        {product.stock} / {product.reorder_level}
-                                    </span>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                </section>
 
-                {!summary.documents.matches && (
+                        {summary.low_stock && (
+                            <div className="rounded-lg border lg:max-w-xl">
+                                <div className="flex items-center justify-between border-b px-4 py-2">
+                                    <h3 className="text-sm font-medium">Low stock</h3>
+                                    <Link href={route('inventory.low-stock.index')} className="text-muted-foreground text-xs hover:underline">
+                                        {summary.low_stock.count} product(s) →
+                                    </Link>
+                                </div>
+                                {summary.low_stock.products.length === 0 && (
+                                    <p className="text-muted-foreground px-4 py-3 text-sm">Nothing below its reorder level.</p>
+                                )}
+                                <ul className="divide-y text-sm">
+                                    {summary.low_stock.products.map((product) => (
+                                        <li key={product.id} className="flex items-center justify-between gap-2 px-4 py-2">
+                                            <Link href={route('products.show', product.id)} className="min-w-0 truncate hover:underline">
+                                                {product.name}
+                                            </Link>
+                                            <span className={product.stock <= 0 ? 'text-destructive tabular-nums' : 'tabular-nums'}>
+                                                {product.stock} / {product.reorder_level}
+                                            </span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+                    </section>
+                )}
+
+                {summary.documents && !summary.documents.matches && (
                     <p className="text-destructive text-sm">Revenue lines and document totals differ — run the reconciliation checks.</p>
                 )}
             </div>

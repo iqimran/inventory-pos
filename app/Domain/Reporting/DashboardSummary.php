@@ -22,36 +22,65 @@ class DashboardSummary
     ) {}
 
     /**
+     * Only the sections in $visible (see ReportAccess::DASHBOARD) are computed and returned; a hidden
+     * section is never queried, so its data cannot reach the browser.
+     *
+     * @param  array<string, bool>  $visible
      * @return array<string, mixed>
      */
-    public function build(ReportPeriod $period, bool $withCost): array
+    public function build(ReportPeriod $period, array $visible): array
     {
-        $revenue = $this->revenue->totals($period);
-        [$from, $to] = $period->dateBounds();
+        $summary = [];
+        $needsRevenue = ($visible['product_sales'] ?? false) || ($visible['service_revenue'] ?? false)
+            || ($visible['combined_revenue'] ?? false) || ($visible['gross_profit'] ?? false);
+        $revenue = $needsRevenue ? $this->revenue->totals($period) : null;
 
-        // whereDate: DATE values carry a time part on some drivers (SQLite), which whereBetween would miss.
-        $purchases = DB::table('purchases')->whereDate('purchase_date', '>=', $from)->whereDate('purchase_date', '<=', $to)
-            ->selectRaw('COUNT(*) as documents, COALESCE(SUM(total), 0) as total')->first();
-        $purchaseReturns = DB::table('purchase_returns')->whereDate('return_date', '>=', $from)->whereDate('return_date', '<=', $to)->sum('total');
-        $expenses = $this->expenses->build($period->from, $period->to, null, 'day');
-
-        return [
-            'product_sales' => [
+        if ($visible['product_sales'] ?? false) {
+            $summary['product_sales'] = [
                 'amount' => $revenue['product']['net'],
                 'quantity' => $revenue['product']['quantity']['net'],
-                'gross_profit' => $withCost ? $revenue['product']['gross_profit'] : null,
-            ],
-            'service_revenue' => $revenue['service']['revenue'],
-            'combined_revenue' => $revenue['combined'],
-            'documents' => $revenue['documents'],
-            'purchases' => [
+            ];
+        }
+
+        if ($visible['gross_profit'] ?? false) {
+            $summary['gross_profit'] = $revenue['product']['gross_profit'];
+        }
+
+        if ($visible['service_revenue'] ?? false) {
+            $summary['service_revenue'] = $revenue['service']['revenue'];
+        }
+
+        if ($visible['combined_revenue'] ?? false) {
+            $summary['combined_revenue'] = $revenue['combined'];
+            $summary['documents'] = $revenue['documents'];
+            $summary['trend'] = $this->revenue->byPeriod($period);
+        }
+
+        [$from, $to] = $period->dateBounds();
+
+        if ($visible['purchases'] ?? false) {
+            // whereDate: DATE values carry a time part on some drivers (SQLite), which whereBetween would miss.
+            $purchases = DB::table('purchases')->whereDate('purchase_date', '>=', $from)->whereDate('purchase_date', '<=', $to)
+                ->selectRaw('COUNT(*) as documents, COALESCE(SUM(total), 0) as total')->first();
+            $purchaseReturns = DB::table('purchase_returns')->whereDate('return_date', '>=', $from)->whereDate('return_date', '<=', $to)->sum('total');
+            $summary['purchases'] = [
                 'amount' => Money::sub(Money::of((string) $purchases->total), Money::of((string) $purchaseReturns)),
                 'documents' => (int) $purchases->documents,
                 'returns' => Money::of((string) $purchaseReturns),
-            ],
-            'expenses' => ['amount' => $expenses['total'], 'entries' => $expenses['count']],
-            'outstanding' => $this->parties->outstanding(),
-            'low_stock' => [
+            ];
+        }
+
+        if ($visible['expenses'] ?? false) {
+            $expenses = $this->expenses->build($period->from, $period->to, null, 'day');
+            $summary['expenses'] = ['amount' => $expenses['total'], 'entries' => $expenses['count']];
+        }
+
+        if ($visible['outstanding'] ?? false) {
+            $summary['outstanding'] = $this->parties->outstanding();
+        }
+
+        if ($visible['low_stock'] ?? false) {
+            $summary['low_stock'] = [
                 'count' => $this->lowStock->count(),
                 'products' => $this->lowStock->query()->limit(5)->get()->map(fn (Product $product) => [
                     'id' => $product->id,
@@ -60,8 +89,9 @@ class DashboardSummary
                     'stock' => (int) $product->getAttribute('stock_quantity'),
                     'reorder_level' => $product->reorder_level,
                 ])->all(),
-            ],
-            'trend' => $this->revenue->byPeriod($period),
-        ];
+            ];
+        }
+
+        return $summary;
     }
 }

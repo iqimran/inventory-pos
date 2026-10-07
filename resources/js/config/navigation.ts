@@ -53,10 +53,10 @@ export const navigation: NavGroup[] = [
     {
         title: 'Reports',
         items: [
-            { title: 'Sales report', url: '/reports/sales', icon: FileBarChart, permission: 'reports.view' },
-            { title: 'Revenue', url: '/reports/revenue', icon: TrendingUp, permission: 'reports.view' },
-            { title: 'Stock report', url: '/reports/stock', icon: PackageSearch, permission: 'reports.view' },
-            { title: 'Party ledger', url: '/reports/parties', icon: BookOpen, permission: 'reports.view' },
+            { title: 'Sales report', url: '/reports/sales', icon: FileBarChart, permission: ['reports.view', 'sales.view'] },
+            { title: 'Revenue', url: '/reports/revenue', icon: TrendingUp, permission: ['reports.view', 'sales.view', 'service.view'] },
+            { title: 'Stock report', url: '/reports/stock', icon: PackageSearch, permission: ['reports.view', 'inventory.view'] },
+            { title: 'Party ledger', url: '/reports/parties', icon: BookOpen, permission: ['reports.view', 'parties.view'] },
         ],
     },
     {

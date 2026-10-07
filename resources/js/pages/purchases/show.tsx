@@ -170,7 +170,9 @@ export default function ShowPurchase({
                                             <span>
                                                 Opening balance advance
                                                 {allocation.created_at && (
-                                                    <span className="text-muted-foreground ml-2 text-xs">{formatDateTime(allocation.created_at)}</span>
+                                                    <span className="text-muted-foreground ml-2 text-xs">
+                                                        {formatDateTime(allocation.created_at)}
+                                                    </span>
                                                 )}
                                             </span>
                                         )}

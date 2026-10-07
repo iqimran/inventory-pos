@@ -9,7 +9,7 @@ class ReportAccessTest extends ReportTestCase
 {
     private const REPORTS = ['/reports/sales', '/reports/product-revenue', '/reports/service-revenue', '/reports/revenue', '/reports/stock', '/reports/parties'];
 
-    public function test_reports_need_the_reports_permission()
+    public function test_reports_need_reports_view_and_the_module_permission()
     {
         $clerk = $this->generalUser();
 
@@ -17,12 +17,36 @@ class ReportAccessTest extends ReportTestCase
             $this->actingAs($clerk)->get($url)->assertForbidden();
         }
 
-        $viewer = User::factory()->create();
-        $viewer->givePermissionTo(Permission::ReportsView->value);
-
+        // reports.view alone opens no report: each also needs the permission of the data it shows.
+        $reportsOnly = User::factory()->create();
+        $reportsOnly->givePermissionTo(Permission::ReportsView->value);
         foreach ([...self::REPORTS, '/expenses/report'] as $url) {
-            $this->actingAs($viewer)->get($url)->assertOk();
+            $this->actingAs($reportsOnly)->get($url)->assertForbidden();
         }
+
+        $matrix = [
+            '/reports/sales' => ['sales.view'],
+            '/reports/product-revenue' => ['sales.view'],
+            '/reports/service-revenue' => ['service.view'],
+            '/reports/revenue' => ['sales.view', 'service.view'],
+            '/reports/stock' => ['inventory.view'],
+            '/reports/parties' => ['parties.view'],
+        ];
+
+        foreach ($matrix as $url => $modulePermissions) {
+            $user = User::factory()->create();
+            $user->givePermissionTo('reports.view', ...$modulePermissions);
+            $this->actingAs($user)->get($url)->assertOk();
+
+            $withoutReports = User::factory()->create();
+            $withoutReports->givePermissionTo(...$modulePermissions);
+            $this->actingAs($withoutReports)->get($url)->assertForbidden();
+        }
+
+        // The expense report needs expenses.view (reports.view is not enough).
+        $expenses = User::factory()->create();
+        $expenses->givePermissionTo('expenses.view');
+        $this->actingAs($expenses)->get('/expenses/report')->assertOk();
     }
 
     public function test_date_range_validation()

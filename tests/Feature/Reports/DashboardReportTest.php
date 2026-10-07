@@ -48,7 +48,7 @@ class DashboardReportTest extends ReportTestCase
                 ->where('summary.low_stock.products.0.stock', 3)
                 ->has('summary.trend', 1)
                 ->where('summary.trend.0.combined', '2100.00')
-                ->whereNot('summary.product_sales.gross_profit', null));
+                ->whereNot('summary.gross_profit', null));
     }
 
     public function test_defaults_to_today_and_switches_trend_to_months_for_long_ranges()
@@ -57,15 +57,54 @@ class DashboardReportTest extends ReportTestCase
         $this->get('/dashboard?from=2026-01-01&to=2026-09-15')->assertInertia(fn (Assert $page) => $page->where('filters.group_by', 'month'));
     }
 
-    public function test_users_without_report_access_see_the_welcome_page()
+    public function test_users_without_any_dashboard_permission_see_the_welcome_page()
     {
-        $this->actingAs($this->generalUser())->get('/dashboard')
+        $nobody = User::factory()->create();
+
+        $this->actingAs($nobody)->get('/dashboard')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page->component('dashboard')->where('summary', null));
+    }
 
-        $viewer = User::factory()->create();
-        $viewer->givePermissionTo('reports.view');
-        $this->actingAs($viewer)->get('/dashboard')
-            ->assertInertia(fn (Assert $page) => $page->whereNot('summary', null)->where('summary.product_sales.gross_profit', null)); // no cost access
+    public function test_general_user_sees_only_low_stock_not_financial_figures()
+    {
+        $this->product('Connector', '200.00', stock: 2, reorder: 5);
+
+        // Default General User: inventory.view but no reports.view.
+        $this->actingAs($this->generalUser())->get('/dashboard')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('summary.low_stock.count', 1)
+                ->missing('summary.product_sales')
+                ->missing('summary.service_revenue')
+                ->missing('summary.combined_revenue')
+                ->missing('summary.trend')
+                ->missing('summary.gross_profit')
+                ->missing('summary.purchases')
+                ->missing('summary.expenses')
+                ->missing('summary.outstanding'));
+    }
+
+    public function test_each_figure_needs_its_own_module_permission()
+    {
+        // Reported case: a user with reports.view and purchases.view must still not see expenses.
+        $user = User::factory()->create();
+        $user->givePermissionTo('reports.view', 'sales.view', 'purchases.view');
+
+        $this->actingAs($user)->get('/dashboard')
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('summary.product_sales')
+                ->has('summary.gross_profit')            // sales + purchase costs
+                ->has('summary.purchases')
+                ->missing('summary.service_revenue')     // no service.view
+                ->missing('summary.combined_revenue')    // needs sales + service
+                ->missing('summary.expenses')            // no expenses.view
+                ->missing('summary.outstanding')         // no parties.view
+                ->missing('summary.low_stock'));         // no inventory.view
+
+        // reports.view alone shows nothing at all.
+        $reportsOnly = User::factory()->create();
+        $reportsOnly->givePermissionTo('reports.view');
+        $this->actingAs($reportsOnly)->get('/dashboard')->assertInertia(fn (Assert $page) => $page->where('summary', null));
     }
 }

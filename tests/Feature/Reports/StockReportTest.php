@@ -64,7 +64,7 @@ class StockReportTest extends ReportTestCase
     {
         $this->product('Case', '300.00');
         $viewer = User::factory()->create();
-        $viewer->givePermissionTo('reports.view');
+        $viewer->givePermissionTo('reports.view', 'inventory.view');
 
         $this->actingAs($viewer)->get('/reports/stock')
             ->assertOk()
