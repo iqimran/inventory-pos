@@ -21,3 +21,15 @@ foreach (['inventory:reconcile', 'ledger:reconcile'] as $check) {
         ->appendOutputTo(storage_path('logs/scheduler.log'))
         ->onFailure(fn () => Log::error("Scheduled integrity check failed: {$check}. See storage/logs/scheduler.log."));
 }
+
+/*
+ * Daily automatic database backup (Admin → Backups). Always the same file (config/backup.php),
+ * replaced only after the new dump is complete, so it never fills the disk.
+ */
+if (config('backup.auto.enabled')) {
+    Schedule::command('backup:database')
+        ->dailyAt(config('backup.auto.time'))
+        ->withoutOverlapping()
+        ->appendOutputTo(storage_path('logs/scheduler.log'))
+        ->onFailure(fn () => Log::error('Scheduled database backup failed. See storage/logs/scheduler.log.'));
+}

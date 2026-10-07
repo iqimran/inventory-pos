@@ -217,6 +217,23 @@ docker/scripts/restore.sh backups/20260929-013000-database.sql.gz backups/202609
 The script verifies the dump, asks for confirmation, restores, and runs the stock and ledger
 reconciliation checks. **Practise a restore** on a staging copy periodically.
 
+### In-app backups (Admin → Backups)
+
+Admin (only) can also back up the database from the application:
+
+- **Back up now** writes `storage/app/private/backups/manual/manual-<date>-<time>.sql.gz`. Each one can be
+  **downloaded** or deleted; **Clear** deletes all manual backups (the automatic one is kept).
+- **Automatic daily backup**: the scheduler runs `php artisan backup:database` at `BACKUP_AUTO_TIME`
+  (default 01:30) and writes **one file**, `BACKUP_AUTO_PATH` (default
+  `storage/app/private/backups/auto/database-auto.sql.gz`). The new dump replaces yesterday's only once it
+  is complete, so the file never accumulates and a failed run never destroys the last good backup.
+  Requires the `scheduler` container (both compose files) or `php artisan schedule:work`.
+- Files are gzip-compressed SQL: `gunzip -c backup.sql.gz | mysql -u USER -p DATABASE` restores one
+  (replacing all current data). They live in the persistent storage volume; download a copy to keep it
+  off the server. Every create / download / delete / clear is recorded in the audit log.
+
+`docker/scripts/backup.sh` (above) remains the operator's tool and also backs up uploaded files.
+
 ## 7. Rollback
 
 1. **Application only** (the release added no migrations): point `APP_VERSION` at the previous tag and

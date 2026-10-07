@@ -88,3 +88,4 @@ Legend:
 - [x] Required form fields marked with a red asterisk
 - [x] New product dialog on the purchase form
 - [x] POS service charges on the sale invoice (SERVICE revenue, no stock)
+- [x] Admin database backups: manual (download, delete, clear) and one daily automatic file

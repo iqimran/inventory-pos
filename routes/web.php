@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AuditLogController;
+use App\Http\Controllers\Admin\BackupController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Barcodes\BarcodeLabelController;
@@ -64,6 +65,14 @@ Route::middleware(['auth'])->group(function () {
 
         Route::resource('roles', RoleController::class)->except(['show']);
         Route::get('audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
+
+        // Database backups (Admin only).
+        Route::get('backups', [BackupController::class, 'index'])->name('backups.index');
+        Route::post('backups', [BackupController::class, 'store'])->name('backups.store');
+        Route::delete('backups', [BackupController::class, 'clear'])->name('backups.clear');
+        Route::get('backups/auto/download', [BackupController::class, 'downloadAuto'])->name('backups.auto.download');
+        Route::get('backups/{name}/download', [BackupController::class, 'download'])->name('backups.download');
+        Route::delete('backups/{name}', [BackupController::class, 'destroy'])->name('backups.destroy');
     });
 
     // Catalogue master data (managed in dialogs on the index pages).

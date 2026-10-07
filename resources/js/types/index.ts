@@ -21,6 +21,8 @@ export interface NavItem {
     isActive?: boolean;
     /** Permission(s) required to see this item (all of them). Visibility only; the server still authorizes. */
     permission?: string | string[];
+    /** Shown to Admin only (abilities that are never granted as permissions). */
+    adminOnly?: boolean;
 }
 
 export interface FlashMessages {

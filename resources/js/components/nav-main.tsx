@@ -12,11 +12,12 @@ function isActive(currentUrl: string, itemUrl: string): boolean {
 export function NavMain({ groups = [] }: { groups: NavGroup[] }) {
     const page = usePage();
     const can = useCan();
+    const isAdmin = (page.props as { auth?: { user?: { roles?: string[] } } }).auth?.user?.roles?.includes('Admin') ?? false;
 
     return (
         <>
             {groups.map((group) => {
-                const items = group.items.filter((item) => can(item.permission));
+                const items = group.items.filter((item) => can(item.permission) && (!item.adminOnly || isAdmin));
 
                 if (items.length === 0) {
                     return null;

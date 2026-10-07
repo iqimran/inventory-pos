@@ -9,6 +9,7 @@ import {
     ClipboardList,
     Contact,
     CreditCard,
+    DatabaseBackup,
     FileBarChart,
     FileText,
     FolderTree,
@@ -109,6 +110,7 @@ export const navigation: NavGroup[] = [
             { title: 'Users', url: '/admin/users', icon: Users, permission: 'users.view' },
             { title: 'Roles & Permissions', url: '/admin/roles', icon: ShieldCheck, permission: 'roles.view' },
             { title: 'Audit log', url: '/admin/audit-logs', icon: History, permission: 'audit.view' },
+            { title: 'Backups', url: '/admin/backups', icon: DatabaseBackup, adminOnly: true },
         ],
     },
 ];
