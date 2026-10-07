@@ -12,8 +12,8 @@ use Tests\Feature\Service\Concerns\BuildsServiceJobs;
 use Tests\TestCase;
 
 /**
- * The job estimate is billed as an editable "Estimated service charge" line, so the draft total
- * and the invoice include it, without ever billing the estimate on top of the real lines.
+ * The job estimate is billed as an editable "Estimated service charge" line, in addition to the
+ * job's parts and other charges, so the draft total and the invoice include it.
  */
 class EstimateChargeTest extends TestCase
 {
@@ -62,7 +62,7 @@ class EstimateChargeTest extends TestCase
         $this->assertSame('0.00', $job->service_charge);
     }
 
-    public function test_the_line_follows_the_estimate_until_edited_by_hand()
+    public function test_the_line_and_the_estimate_stay_equal()
     {
         $job = $this->openJob(['estimated_amount' => '1000.00']);
 
@@ -75,14 +75,17 @@ class EstimateChargeTest extends TestCase
         $this->moveTo($job, 'WAITING_FOR_APPROVAL', ['diagnosis' => 'Board', 'estimated_amount' => '1400.00'])->assertSessionHasNoErrors();
         $this->assertSame('1400.00', $job->fresh()->service_charge);
 
-        // Edited by hand: an ordinary charge from now on.
+        // Editing the line changes the estimate.
         $line = $job->charges()->sole();
-        $this->actingAs($this->technician)->put("/service/jobs/{$job->id}/charges/{$line->id}", ['description' => 'Board repair', 'amount' => '900.00'])
+        $this->actingAs($this->technician)->put("/service/jobs/{$job->id}/charges/{$line->id}", ['description' => 'Board repair (estimate)', 'amount' => '900.00'])
             ->assertSessionHasNoErrors();
-        $this->edit($job, '2000.00');
+        $this->assertSame([['Board repair (estimate)', '900.00', true]], $this->charges($job));
+        $this->assertSame('900.00', $job->fresh()->estimated_amount);
 
-        $this->assertSame([['Board repair', '900.00', false]], $this->charges($job));
-        $this->assertSame('900.00', $job->fresh()->service_charge);
+        // Deleting the line clears the estimate.
+        $this->actingAs($this->technician)->delete("/service/jobs/{$job->id}/charges/{$line->id}")->assertSessionHasNoErrors();
+        $this->assertSame([], $this->charges($job));
+        $this->assertSame(['0.00', '0.00'], [$job->fresh()->estimated_amount, $job->fresh()->service_charge]);
     }
 
     public function test_clearing_the_estimate_removes_the_line()
@@ -95,23 +98,25 @@ class EstimateChargeTest extends TestCase
         $this->assertSame('0.00', $job->fresh()->service_charge);
     }
 
-    public function test_real_parts_or_charges_replace_the_estimate_line_so_it_is_not_billed_twice()
+    public function test_the_estimate_is_billed_in_addition_to_parts_and_charges()
     {
-        $ic = Product::factory()->withStock(5)->create(['retail_price' => '800.00']);
+        // Reported case: estimate 500, parts 120, labour 200 → draft and invoice 820.
+        $part = Product::factory()->withStock(5)->create(['retail_price' => '120.00']);
+        $job = $this->openJob(['estimated_amount' => '500.00']);
+        $this->addPart($job, $part, 1)->assertSessionHasNoErrors();
+        $this->addCharge($job, '200.00')->assertSessionHasNoErrors();
 
-        $withPart = $this->openJob(['estimated_amount' => '1500.00']);
-        $this->addPart($withPart, $ic, 1)->assertSessionHasNoErrors();
-        $this->assertSame([], $this->charges($withPart));
-        $this->assertSame('0.00', $withPart->fresh()->service_charge);
+        $this->assertSame([['Estimated service charge', '500.00', true], ['Repair / labour', '200.00', false]], $this->charges($job));
+        $this->assertSame('700.00', $job->fresh()->service_charge);
+        $this->actingAs($this->technician)->get("/service/jobs/{$job->id}")
+            ->assertInertia(fn (Assert $page) => $page->where('job.data.parts_total', '120.00')->where('job.data.service_charge', '700.00'));
 
-        $withCharge = $this->openJob(['estimated_amount' => '1500.00']);
-        $this->addCharge($withCharge, '500.00')->assertSessionHasNoErrors();
-        $this->assertSame([['Repair / labour', '500.00', false]], $this->charges($withCharge));
-        $this->assertSame('500.00', $withCharge->fresh()->service_charge);
+        // Changing the estimate later changes only its own line.
+        $this->edit($job, '600.00');
+        $this->assertSame('800.00', $job->fresh()->service_charge);
 
-        // A later estimate change does not bring the placeholder back next to real lines.
-        $this->edit($withCharge, '1800.00');
-        $this->assertSame('500.00', $withCharge->fresh()->service_charge);
+        $this->invoice($this->makeReady($job))->assertSessionHasNoErrors();
+        $this->assertSame('920.00', ServiceInvoice::sole()->total);   // 120 + 600 + 200
     }
 
     public function test_invoiced_jobs_are_not_changed()

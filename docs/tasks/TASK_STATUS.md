@@ -89,4 +89,4 @@ Legend:
 - [x] New product dialog on the purchase form
 - [x] POS service charges on the sale invoice (SERVICE revenue, no stock)
 - [x] Admin database backups: manual (download, delete, clear) and one daily automatic file
-- [x] Service job estimate billed as an editable placeholder service charge
+- [x] Service job estimate billed as its own service charge line, in addition to parts and charges

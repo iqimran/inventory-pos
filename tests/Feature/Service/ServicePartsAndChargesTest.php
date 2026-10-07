@@ -157,9 +157,7 @@ class ServicePartsAndChargesTest extends TestCase
         $this->addCharge($this->job, '10.123')->assertSessionHasErrors('amount');
         $this->addCharge($this->job, '10', '')->assertSessionHasErrors('description');
 
-        // Only the estimate placeholder line from opening the job.
-        $this->assertSame(0, ServiceJobCharge::where('is_estimate', false)->count());
-        $this->assertSame('1500.00', $this->job->fresh()->service_charge);
+        $this->assertSame(0, ServiceJobCharge::count());
     }
 
     public function test_lines_belong_to_their_job()

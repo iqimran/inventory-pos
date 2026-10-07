@@ -178,7 +178,7 @@ export default function CreateServiceJob({ technicians, customer: initialCustome
                                 value={form.data.estimated_amount}
                                 onChange={(e) => form.setData('estimated_amount', e.target.value)}
                             />
-                            <p className="text-muted-foreground text-xs">Billed as a service charge until parts or charges are added.</p>
+                            <p className="text-muted-foreground text-xs">Billed as a service charge, in addition to parts and other charges.</p>
                             <InputError message={form.errors.estimated_amount} />
                         </div>
                         <div className="grid gap-2">

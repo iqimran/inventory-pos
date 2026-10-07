@@ -36,6 +36,8 @@ export default function ShowServiceJob({ job: { data: job }, technicians, method
     const open = !['DELIVERED', 'CANCELLED'].includes(job.status);
     const billable = manage && open && !job.invoice;
     const draftTotal = fromCents(toCents(job.parts_total) + toCents(job.service_charge));
+    // The estimate is billed as its own service line; show it apart from the other charges.
+    const estimateLineCents = (job.charges ?? []).filter((charge) => charge.is_estimate).reduce((sum, charge) => sum + toCents(charge.amount), 0);
 
     return (
         <AppLayout
@@ -102,10 +104,14 @@ export default function ShowServiceJob({ job: { data: job }, technicians, method
                         <Card>
                             <CardContent className="space-y-1 pt-6 text-sm">
                                 <h3 className="mb-2 font-medium">Bill</h3>
-                                <Row label="Estimate" value={formatMoney(job.estimated_amount)} />
                                 {job.approved_amount && <Row label="Approved" value={formatMoney(job.approved_amount)} />}
+                                {/* Jobs invoiced before estimates were billed show theirs as a quote only. */}
+                                <Row
+                                    label={estimateLineCents === 0 && toCents(job.estimated_amount) > 0 ? 'Estimate (quote only)' : 'Estimate'}
+                                    value={formatMoney(estimateLineCents > 0 ? fromCents(estimateLineCents) : job.estimated_amount)}
+                                />
                                 <Row label="Parts (product)" value={formatMoney(job.parts_total)} />
-                                <Row label="Service charge" value={formatMoney(job.service_charge)} />
+                                <Row label="Other service charges" value={formatMoney(fromCents(toCents(job.service_charge) - estimateLineCents))} />
                                 <Row label={job.invoice ? 'Invoiced' : 'Draft total'} value={formatMoney(job.invoice?.total ?? draftTotal)} strong />
                                 {job.invoice && (
                                     <div className="space-y-2 border-t pt-2">
@@ -661,7 +667,7 @@ function ChargeRow({ job, charge, editable }: { job: ServiceJob; charge: Service
             <span>
                 {charge.description}
                 {charge.is_estimate && (
-                    <span className="text-muted-foreground block text-xs">From the estimate · replaced when you add parts or charges</span>
+                    <span className="text-muted-foreground block text-xs">The job estimate · editing or removing it changes the estimate</span>
                 )}
             </span>
             <span className="flex items-center gap-1">
