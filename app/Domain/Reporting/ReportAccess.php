@@ -8,6 +8,9 @@ use App\Models\User;
 /**
  * Who may see which report figures: reports.view plus the permission of the module whose data the
  * figure exposes. Holding reports.view alone never reveals another module's data (e.g. expenses).
+ *
+ * The dashboard shows the whole shop only to Admin. Every other user sees a summary of the
+ * transactions they recorded themselves, for the modules they work in (OWN_DASHBOARD).
  */
 final class ReportAccess
 {
@@ -21,7 +24,7 @@ final class ReportAccess
         'parties' => [Permission::ReportsView, Permission::PartiesView],
     ];
 
-    /** Dashboard section => required permissions (all). */
+    /** Dashboard section => required permissions (all) — reference for the shop-wide (Admin) dashboard. */
     public const DASHBOARD = [
         'product_sales' => [Permission::ReportsView, Permission::SalesView],
         'service_revenue' => [Permission::ReportsView, Permission::ServiceView],
@@ -34,6 +37,30 @@ final class ReportAccess
         'low_stock' => [Permission::InventoryView],
     ];
 
+    /**
+     * Own-transactions dashboard: section => alternatives (any group suffices; every permission in a group is needed).
+     */
+    public const OWN_DASHBOARD = [
+        'product_sales' => [[Permission::SalesView], [Permission::SalesCreate]],
+        'service_revenue' => [[Permission::ServiceView], [Permission::ServiceManage]],
+        'combined_revenue' => [[Permission::SalesView], [Permission::SalesCreate], [Permission::ServiceView], [Permission::ServiceManage]],
+        // Exposes purchase costs.
+        'gross_profit' => [[Permission::SalesView, Permission::PurchasesView]],
+        'purchases' => [[Permission::PurchasesView], [Permission::PurchasesCreate]],
+        'expenses' => [[Permission::ExpensesView], [Permission::ExpensesManage]],
+        'outstanding' => [[Permission::SalesView], [Permission::SalesCreate], [Permission::ServiceView], [Permission::ServiceManage], [Permission::PurchasesView], [Permission::PurchasesCreate]],
+        // Operational, not a transaction: anyone who may view stock sees what is running low.
+        'low_stock' => [[Permission::InventoryView]],
+    ];
+
+    /**
+     * 'all' (the whole shop) for Admin, otherwise 'own' (only transactions the user recorded).
+     */
+    public static function dashboardScope(User $user): string
+    {
+        return $user->isAdmin() ? 'all' : 'own';
+    }
+
     public static function report(User $user, string $report): bool
     {
         return isset(self::REPORTS[$report]) && self::all($user, self::REPORTS[$report]);
@@ -44,7 +71,14 @@ final class ReportAccess
      */
     public static function dashboard(User $user): array
     {
-        return array_map(fn (array $permissions) => self::all($user, $permissions), self::DASHBOARD);
+        if (self::dashboardScope($user) === 'all') {
+            return array_map(fn (array $permissions) => self::all($user, $permissions), self::DASHBOARD);
+        }
+
+        return array_map(
+            fn (array $alternatives) => collect($alternatives)->contains(fn (array $permissions) => self::all($user, $permissions)),
+            self::OWN_DASHBOARD,
+        );
     }
 
     /**

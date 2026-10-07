@@ -83,6 +83,7 @@ Legend:
 
 ## Post-release fixes (2026-10-07)
 - [x] Dashboard and report figures require the matching module permissions
+- [x] Dashboard: whole shop for Admin, own transactions for every other user
 - [x] Party outstanding split into customer dues/credit and supplier payables/advances
 - [x] Required form fields marked with a red asterisk
 - [x] New product dialog on the purchase form

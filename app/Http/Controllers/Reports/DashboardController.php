@@ -13,16 +13,19 @@ use Inertia\Response;
 
 /**
  * Dashboard: the KPI cards the user is allowed to see (ReportAccess), otherwise a welcome page.
+ * Admin sees the whole shop; everyone else sees only the transactions they recorded.
  */
 class DashboardController extends Controller
 {
     public function __invoke(Request $request, DashboardSummary $summary): Response
     {
-        $visible = ReportAccess::dashboard($request->user());
+        $user = $request->user();
+        $visible = ReportAccess::dashboard($user);
+        $scope = ReportAccess::dashboardScope($user);
 
         // Nothing the user may see: the welcome page.
         if (! in_array(true, $visible, true)) {
-            return Inertia::render('dashboard', ['summary' => null, 'filters' => null]);
+            return Inertia::render('dashboard', ['summary' => null, 'filters' => null, 'scope' => $scope]);
         }
 
         $filters = $request->validate([
@@ -38,8 +41,9 @@ class DashboardController extends Controller
         $groupBy = CarbonImmutable::parse($from)->diffInDays(CarbonImmutable::parse($to)) > 62 ? 'month' : 'day';
 
         return Inertia::render('dashboard', [
-            'summary' => $summary->build(ReportPeriod::make($from, $to, $groupBy), $visible),
+            'summary' => $summary->build(ReportPeriod::make($from, $to, $groupBy), $visible, $scope === 'own' ? $user->id : null),
             'filters' => ['from' => $from, 'to' => $to, 'group_by' => $groupBy],
+            'scope' => $scope,
         ]);
     }
 }

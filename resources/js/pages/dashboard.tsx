@@ -26,6 +26,8 @@ interface Summary {
 interface DashboardProps {
     summary: Summary | null;
     filters: { from: string; to: string; group_by: string } | null;
+    /** 'all' = the whole shop (Admin); 'own' = only transactions the user recorded. */
+    scope: 'all' | 'own';
 }
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Dashboard', href: '/dashboard' }];
@@ -38,7 +40,7 @@ const SERVICE_FILL = 'bg-[#eb6834] dark:bg-[#d95926]';
  * Stacked product / service revenue per day or month. Values are exact money strings; the bars are
  * proportional. Hover a row for its figures; the combined revenue report is the table view.
  */
-function RevenueTrend({ rows, tableHref }: { rows: RevenuePeriod[]; tableHref: string }) {
+function RevenueTrend({ rows, tableHref }: { rows: RevenuePeriod[]; tableHref?: string }) {
     const max = Math.max(1, ...rows.map((row) => toCents(row.combined)));
 
     if (rows.length === 0) {
@@ -54,9 +56,11 @@ function RevenueTrend({ rows, tableHref }: { rows: RevenuePeriod[]; tableHref: s
                 <span className="flex items-center gap-1">
                     <span className={`inline-block size-2.5 rounded-sm ${SERVICE_FILL}`} /> Service
                 </span>
-                <Link href={tableHref} className="ml-auto hover:underline">
-                    View as table →
-                </Link>
+                {tableHref && (
+                    <Link href={tableHref} className="ml-auto hover:underline">
+                        View as table →
+                    </Link>
+                )}
             </div>
             {rows.map((row) => {
                 const product = Math.max(0, toCents(row.product));
@@ -108,7 +112,7 @@ function RevenueTrend({ rows, tableHref }: { rows: RevenuePeriod[]; tableHref: s
     );
 }
 
-export default function Dashboard({ summary, filters }: DashboardProps) {
+export default function Dashboard({ summary, filters, scope }: DashboardProps) {
     const { auth } = usePage<SharedData>().props;
 
     if (!summary || !filters) {
@@ -131,13 +135,17 @@ export default function Dashboard({ summary, filters }: DashboardProps) {
     }
 
     const range = { from: filters.from, to: filters.to };
+    const own = scope === 'own';
+    // Shop-wide report pages are linked only from the Admin (whole shop) dashboard.
+    const link = (name: string, params?: Record<string, string>) => (own ? undefined : route(name, params));
+    const period = filters.from === filters.to ? filters.from : `${filters.from} → ${filters.to}`;
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Dashboard" />
             <div className="flex h-full flex-1 flex-col gap-6 p-4 md:p-6">
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                    <Heading title="Dashboard" description={filters.from === filters.to ? filters.from : `${filters.from} → ${filters.to}`} />
+                    <Heading title={own ? 'My dashboard' : 'Dashboard'} description={own ? `${period} · only transactions you recorded` : period} />
                     <ReportFilters routeName="dashboard" filters={filters} />
                 </div>
 
@@ -147,7 +155,7 @@ export default function Dashboard({ summary, filters }: DashboardProps) {
                             label="Product sales"
                             value={formatMoney(summary.product_sales.amount)}
                             sub={`${summary.product_sales.quantity} unit(s) · POS + service parts − returns`}
-                            href={route('reports.product-revenue', range)}
+                            href={link('reports.product-revenue', range)}
                         />
                     )}
                     {summary.service_revenue !== undefined && (
@@ -155,7 +163,7 @@ export default function Dashboard({ summary, filters }: DashboardProps) {
                             label="Mobile service revenue"
                             value={formatMoney(summary.service_revenue)}
                             sub="Service / labour lines"
-                            href={route('reports.service-revenue', range)}
+                            href={link('reports.service-revenue', range)}
                         />
                     )}
                     {summary.combined_revenue !== undefined && summary.documents && (
@@ -163,7 +171,7 @@ export default function Dashboard({ summary, filters }: DashboardProps) {
                             label="Combined revenue"
                             value={formatMoney(summary.combined_revenue)}
                             sub={`${summary.documents.sales} sale(s), ${summary.documents.service_invoices} service invoice(s)`}
-                            href={route('reports.revenue', range)}
+                            href={link('reports.revenue', range)}
                             emphasis
                         />
                     )}
@@ -175,7 +183,7 @@ export default function Dashboard({ summary, filters }: DashboardProps) {
                             label="Purchases"
                             value={formatMoney(summary.purchases.amount)}
                             sub={`${summary.purchases.documents} purchase(s)${toCents(summary.purchases.returns) > 0 ? `, returns −${formatMoney(summary.purchases.returns)}` : ''}`}
-                            href={route('purchases.index')}
+                            href={link('purchases.index')}
                         />
                     )}
                     {summary.expenses && (
@@ -183,10 +191,26 @@ export default function Dashboard({ summary, filters }: DashboardProps) {
                             label="Expenses"
                             value={formatMoney(summary.expenses.amount)}
                             sub={`${summary.expenses.entries} entr(ies)`}
-                            href={route('expenses.report', range)}
+                            href={link('expenses.report', range)}
                         />
                     )}
-                    {summary.outstanding && (
+                    {summary.outstanding && own && (
+                        <>
+                            <StatCard
+                                label="Dues on my sales (now)"
+                                value={formatMoney(summary.outstanding.customer_receivable)}
+                                sub={`${summary.outstanding.customer_receivable_parties} customer(s) still owe on invoices you recorded`}
+                            />
+                            {summary.purchases && (
+                                <StatCard
+                                    label="Payable on my purchases (now)"
+                                    value={formatMoney(summary.outstanding.supplier_payable)}
+                                    sub={`${summary.outstanding.supplier_payable_parties} supplier(s) on purchases you recorded`}
+                                />
+                            )}
+                        </>
+                    )}
+                    {summary.outstanding && !own && (
                         <>
                             <StatCard
                                 label="Customer dues (now)"
@@ -209,7 +233,7 @@ export default function Dashboard({ summary, filters }: DashboardProps) {
                         {summary.trend && (
                             <div className="space-y-3 rounded-lg border p-4">
                                 <h3 className="font-medium">Revenue {filters.group_by === 'month' ? 'by month' : 'by day'}</h3>
-                                <RevenueTrend rows={summary.trend} tableHref={route('reports.revenue', { ...range, group_by: filters.group_by })} />
+                                <RevenueTrend rows={summary.trend} tableHref={link('reports.revenue', { ...range, group_by: filters.group_by })} />
                             </div>
                         )}
 

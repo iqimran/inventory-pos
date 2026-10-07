@@ -22,9 +22,24 @@ use Illuminate\Support\Facades\DB;
  * labour to service revenue, and exactly its total to combined revenue — never counted twice.
  * Line amounts are net of discounts (discount shares), so they add up to what customers were billed.
  * Returns count in the period in which the goods came back.
+ *
+ * createdBy() narrows every figure to the documents one user recorded (the non-admin dashboard).
  */
 class RevenueReport
 {
+    private ?int $createdBy = null;
+
+    /**
+     * A copy limited to sales, service invoices and returns recorded by the given user (null = everyone).
+     */
+    public function createdBy(?int $userId): static
+    {
+        $report = clone $this;
+        $report->createdBy = $userId;
+
+        return $report;
+    }
+
     /**
      * @return array{
      *     product: array{pos_sales: string, service_parts: string, returns: string, net: string,
@@ -305,7 +320,8 @@ class RevenueReport
         return DB::table('sale_items')
             ->join('sales', 'sales.id', '=', 'sale_items.sale_id')
             ->where('sales.status', SaleStatus::Completed->value)
-            ->whereBetween('sales.sold_at', $period->datetimeBounds());
+            ->whereBetween('sales.sold_at', $period->datetimeBounds())
+            ->when($this->createdBy, fn (Builder $q, int $userId) => $q->where('sales.created_by', $userId));
     }
 
     /**
@@ -316,7 +332,8 @@ class RevenueReport
         return DB::table('sale_service_charges')
             ->join('sales', 'sales.id', '=', 'sale_service_charges.sale_id')
             ->where('sales.status', SaleStatus::Completed->value)
-            ->whereBetween('sales.sold_at', $period->datetimeBounds());
+            ->whereBetween('sales.sold_at', $period->datetimeBounds())
+            ->when($this->createdBy, fn (Builder $q, int $userId) => $q->where('sales.created_by', $userId));
     }
 
     /**
@@ -327,7 +344,8 @@ class RevenueReport
         return DB::table('service_invoice_items')
             ->join('service_invoices', 'service_invoices.id', '=', 'service_invoice_items.service_invoice_id')
             ->where('service_invoices.status', SaleStatus::Completed->value)
-            ->whereBetween('service_invoices.invoiced_at', $period->datetimeBounds());
+            ->whereBetween('service_invoices.invoiced_at', $period->datetimeBounds())
+            ->when($this->createdBy, fn (Builder $q, int $userId) => $q->where('service_invoices.created_by', $userId));
     }
 
     /**
@@ -338,7 +356,8 @@ class RevenueReport
         return DB::table('sale_return_items')
             ->join('sale_returns', 'sale_returns.id', '=', 'sale_return_items.sale_return_id')
             ->where('sale_returns.status', 'COMPLETED')
-            ->whereBetween('sale_returns.returned_at', $period->datetimeBounds());
+            ->whereBetween('sale_returns.returned_at', $period->datetimeBounds())
+            ->when($this->createdBy, fn (Builder $q, int $userId) => $q->where('sale_returns.created_by', $userId));
     }
 
     /**
@@ -347,12 +366,13 @@ class RevenueReport
     private function documentTotals(ReportPeriod $period): array
     {
         $bounds = $period->datetimeBounds();
+        $mine = fn (Builder $q) => $q->when($this->createdBy, fn (Builder $q, int $userId) => $q->where('created_by', $userId));
 
-        $sales = DB::table('sales')->where('status', SaleStatus::Completed->value)->whereBetween('sold_at', $bounds)
+        $sales = DB::table('sales')->tap($mine)->where('status', SaleStatus::Completed->value)->whereBetween('sold_at', $bounds)
             ->selectRaw('COUNT(*) as documents, COALESCE(SUM(total), 0) as total')->first();
-        $invoices = DB::table('service_invoices')->where('status', SaleStatus::Completed->value)->whereBetween('invoiced_at', $bounds)
+        $invoices = DB::table('service_invoices')->tap($mine)->where('status', SaleStatus::Completed->value)->whereBetween('invoiced_at', $bounds)
             ->selectRaw('COUNT(*) as documents, COALESCE(SUM(total), 0) as total')->first();
-        $returns = DB::table('sale_returns')->where('status', 'COMPLETED')->whereBetween('returned_at', $bounds)
+        $returns = DB::table('sale_returns')->tap($mine)->where('status', 'COMPLETED')->whereBetween('returned_at', $bounds)
             ->selectRaw('COUNT(*) as documents, COALESCE(SUM(subtotal), 0) as total')->first();
 
         return [
