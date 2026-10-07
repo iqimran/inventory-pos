@@ -1,11 +1,19 @@
 import { type Sale } from '@/features/sales/types';
-import { formatMoney, toCents } from '@/lib/format';
+import { formatMoney, fromCents, toCents } from '@/lib/format';
 
 /**
  * Totals and payment summary shared by the sale detail page and the printed slip.
  */
 export function SaleTotals({ sale }: { sale: Sale }) {
-    const rows: [string, string, boolean?][] = [['Subtotal', formatMoney(sale.subtotal)]];
+    const serviceCents = (sale.service_charges ?? []).reduce((sum, charge) => sum + toCents(charge.amount), 0);
+    const rows: [string, string, boolean?][] =
+        serviceCents > 0
+            ? [
+                  ['Products', formatMoney(fromCents(toCents(sale.subtotal) - serviceCents))],
+                  ['Service charges', formatMoney(fromCents(serviceCents))],
+                  ['Subtotal', formatMoney(sale.subtotal)],
+              ]
+            : [['Subtotal', formatMoney(sale.subtotal)]];
 
     if (toCents(sale.items_discount) > 0) rows.push(['Item discounts', `−${formatMoney(sale.items_discount)}`]);
     if (toCents(sale.discount) > 0) rows.push(['Invoice discount', `−${formatMoney(sale.discount)}`]);

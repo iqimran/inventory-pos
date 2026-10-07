@@ -80,3 +80,10 @@ Legend:
 - [x] T054 Docker production environment
 - [x] T055 Git/commit/release workflow
 - [x] T056 Production deployment verification
+
+## Post-release fixes (2026-10-07)
+- [x] Dashboard and report figures require the matching module permissions
+- [x] Party outstanding split into customer dues/credit and supplier payables/advances
+- [x] Required form fields marked with a red asterisk
+- [x] New product dialog on the purchase form
+- [x] POS service charges on the sale invoice (SERVICE revenue, no stock)

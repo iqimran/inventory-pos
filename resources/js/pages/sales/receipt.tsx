@@ -124,6 +124,19 @@ export default function SaleReceipt({ sale: { data: sale }, shop, invoiceBarcode
                                 <td className="py-0.5 text-right tabular-nums">{formatMoney(item.line_subtotal)}</td>
                             </tr>
                         ))}
+                        {sale.service_charges && sale.service_charges.length > 0 && (
+                            <tr>
+                                <td colSpan={2} className="pt-1 font-bold">
+                                    Service
+                                </td>
+                            </tr>
+                        )}
+                        {sale.service_charges?.map((charge) => (
+                            <tr key={`service-${charge.id}`} className="align-top">
+                                <td className="py-0.5 pr-2">{charge.description}</td>
+                                <td className="py-0.5 text-right tabular-nums">{formatMoney(charge.amount)}</td>
+                            </tr>
+                        ))}
                     </tbody>
                 </table>
                 <p className="mt-1 text-right">Items: {itemCount}</p>

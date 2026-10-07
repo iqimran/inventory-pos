@@ -77,6 +77,7 @@ class SaleController extends Controller
             'sale' => new SaleResource($sale->load([
                 'party',
                 'items' => fn ($query) => $query->with('product:id,name,sku')->withSum('returnItems as returned_quantity', 'quantity'),
+                'serviceCharges',
                 'returns',
                 'allocations.payment',
                 'creator:id,name',
@@ -92,7 +93,7 @@ class SaleController extends Controller
         Gate::authorize('view', $sale);
 
         return Inertia::render('sales/receipt', [
-            'sale' => new SaleResource($sale->load(['party', 'items.product:id,name,sku', 'allocations.payment', 'creator:id,name'])),
+            'sale' => new SaleResource($sale->load(['party', 'items.product:id,name,sku', 'serviceCharges', 'allocations.payment', 'creator:id,name'])),
             'shop' => $organization->documentHeader(),
             // Scannable invoice number (e.g. to find the sale for a return).
             'invoiceBarcode' => $barcodes->dataUri($sale->invoice_no, 40),
