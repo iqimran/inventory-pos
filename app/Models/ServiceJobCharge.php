@@ -13,11 +13,11 @@ class ServiceJobCharge extends Model
 {
     use HasUserstamps;
 
-    protected $fillable = ['service_job_id', 'description', 'amount'];
+    protected $fillable = ['service_job_id', 'description', 'amount', 'is_estimate'];
 
     protected function casts(): array
     {
-        return ['amount' => 'decimal:2'];
+        return ['amount' => 'decimal:2', 'is_estimate' => 'boolean'];
     }
 
     /**

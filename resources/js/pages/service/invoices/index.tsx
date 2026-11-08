@@ -82,7 +82,10 @@ export default function ServiceInvoicesIndex({ invoices, filters }: InvoicesInde
                             {invoices.data.map((invoice) => (
                                 <tr key={invoice.id} className="hover:bg-muted/30 border-t">
                                     <td className="px-4 py-3">
-                                        <Link href={route('service-invoices.show', invoice.id)} className="font-mono font-medium hover:underline">
+                                        <Link
+                                            href={route('service-invoices.show', invoice.id)}
+                                            className="font-mono font-medium whitespace-nowrap hover:underline"
+                                        >
                                             {invoice.invoice_no}
                                         </Link>
                                         <div className="text-muted-foreground text-xs">

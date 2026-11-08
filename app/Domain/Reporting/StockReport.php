@@ -98,7 +98,7 @@ class StockReport
     {
         [$start, $end] = $period->datetimeBounds();
 
-        return DB::table('stock_movements')
+        $query = DB::table('stock_movements')
             ->join('products', 'products.id', '=', 'stock_movements.product_id')
             ->where('stock_movements.occurred_at', '<=', $end)
             ->when($this->term($search), fn (Builder $q, string $term) => $this->search($q, $term))
@@ -108,18 +108,18 @@ class StockReport
             ->selectRaw('SUM(CASE WHEN stock_movements.occurred_at >= ? AND stock_movements.quantity > 0 THEN stock_movements.quantity ELSE 0 END) as stock_in', [$start])
             ->selectRaw('SUM(CASE WHEN stock_movements.occurred_at >= ? AND stock_movements.quantity < 0 THEN -stock_movements.quantity ELSE 0 END) as stock_out', [$start])
             ->selectRaw('SUM(stock_movements.quantity) as closing')
-            ->orderBy('products.name')
-            ->paginate($perPage, pageName: 'movements_page')
-            ->withQueryString()
-            ->through(fn ($r) => [
-                'product_id' => (int) $r->product_id,
-                'name' => $r->name,
-                'sku' => $r->sku,
-                'opening' => (int) $r->opening,
-                'in' => (int) $r->stock_in,
-                'out' => (int) $r->stock_out,
-                'closing' => (int) $r->closing,
-            ]);
+            ->orderBy('products.name');
+
+        // One row per product: run the aggregate once instead of once more for the count.
+        return AggregatePaginator::paginate($query, $perPage, 'movements_page', fn ($r) => [
+            'product_id' => (int) $r->product_id,
+            'name' => $r->name,
+            'sku' => $r->sku,
+            'opening' => (int) $r->opening,
+            'in' => (int) $r->stock_in,
+            'out' => (int) $r->stock_out,
+            'closing' => (int) $r->closing,
+        ]);
     }
 
     /**

@@ -57,6 +57,7 @@ class ServiceJobResource extends JsonResource
                 'id' => $charge->id,
                 'description' => $charge->description,
                 'amount' => $charge->amount,
+                'is_estimate' => $charge->is_estimate,
             ])),
             // Draft bill: parts + charges before any invoice discount.
             'parts_total' => $this->whenLoaded('items', fn () => Money::add('0.00', ...$this->items->map(fn ($item) => Money::of($item->line_total))->all())),

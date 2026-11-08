@@ -2,6 +2,7 @@
 
 namespace App\Actions\Sales;
 
+use App\Domain\Audit\AuditTrail;
 use App\Domain\Inventory\Data\StockMovementData;
 use App\Domain\Inventory\StockService;
 use App\Domain\PartyLedger\PartyLedgerService;
@@ -28,6 +29,9 @@ use InvalidArgumentException;
 /**
  * Records a POS sale atomically: invoice, stock-out movements (with cost snapshot), customer
  * receivable in the ledger, and the payment received at the counter.
+ *
+ * A sale may also carry service / labour charges (no stock) billed on the same invoice; the
+ * invoice discount is spread over product and service lines alike.
  */
 class CreateSale
 {
@@ -38,11 +42,13 @@ class CreateSale
         private readonly SaleCalculator $calculator,
         private readonly SaleSettlement $settlement,
         private readonly DocumentNumberGenerator $numbers,
+        private readonly AuditTrail $audit,
     ) {}
 
     /**
      * @param  array{sale_type: string, party_id?: ?int, discount?: ?string, notes?: ?string,
-     *               items: list<array{product_id: int, quantity: int, unit_price?: ?string, discount?: ?string}>,
+     *               items?: list<array{product_id: int, quantity: int, unit_price?: ?string, discount?: ?string}>,
+     *               services?: list<array{description: string, amount: string}>,
      *               paid_amount?: ?string, payment_method?: ?string, tendered_amount?: ?string}  $data
      * @param  bool  $allowPriceOverride  whether the cashier may charge a price other than the list price
      *
@@ -57,8 +63,17 @@ class CreateSale
             // Lock order: party first, then stock (inside StockService).
             $party = ! empty($data['party_id']) ? $this->ledger->lock($data['party_id']) : null;
 
-            $lines = $this->priceLines($data['items'], $type, $allowPriceOverride);
-            $totals = $this->totals($lines, $data['discount'] ?? '0');
+            $lines = $this->priceLines($data['items'] ?? [], $type, $allowPriceOverride);
+            $services = array_map(fn (array $service) => [
+                'description' => trim($service['description']),
+                'amount' => Money::of($service['amount']),
+            ], $data['services'] ?? []);
+
+            if ($lines === [] && $services === []) {
+                throw ValidationException::withMessages(['items' => 'The cart is empty.']);
+            }
+
+            $totals = $this->totals($lines, $services, $data['discount'] ?? '0');
             $paid = Money::of($data['paid_amount'] ?? '0');
             $due = Money::sub($totals['total'], $paid);
 
@@ -87,6 +102,7 @@ class CreateSale
                 'subtotal' => $totals['subtotal'],
                 'items_discount' => $totals['items_discount'],
                 'discount' => $totals['discount'],
+                'service_total' => $totals['service_total'],
                 'total' => $totals['total'],
                 'due_amount' => $totals['total'],
                 'payment_status' => PaymentStatus::Due,
@@ -97,7 +113,7 @@ class CreateSale
             ]);
 
             // Stock out; StockService stamps each movement with the current average cost (the snapshot).
-            $movements = $this->stock->recordMany(array_map(fn (array $line) => new StockMovementData(
+            $movements = $lines === [] ? [] : $this->stock->recordMany(array_map(fn (array $line) => new StockMovementData(
                 productId: $line['product_id'],
                 type: StockMovementType::SaleOut,
                 quantity: $line['quantity'],
@@ -125,7 +141,25 @@ class CreateSale
                 ]);
             }
 
+            foreach ($services as $index => $service) {
+                $line = $totals['service_lines'][$index];
+
+                $sale->serviceCharges()->create([
+                    'description' => $service['description'],
+                    'amount' => $line['line_subtotal'],
+                    'discount_share' => $line['discount_share'],
+                    'line_total' => $line['line_total'],
+                ]);
+            }
+
             $sale->forceFill(['cost_total' => $costTotal])->save();
+
+            $overrides = array_values(array_filter($lines, fn (array $line) => $line['price_overridden']));
+            if ($overrides !== []) {
+                $this->audit->record('sale.price_overridden', $sale, new: ['lines' => array_map(fn (array $line) => [
+                    'product_id' => $line['product_id'], 'quantity' => $line['quantity'], 'list_price' => $line['list_price'], 'unit_price' => $line['unit_price'],
+                ], $overrides)], description: $sale->invoice_no);
+            }
 
             if ($party && Money::isPositive($totals['total'])) {
                 $this->ledger->debit($party, LedgerEntryType::Sale, $totals['total'], $sale, "Sale {$sale->invoice_no}", $soldAt);
@@ -184,12 +218,15 @@ class CreateSale
     }
 
     /**
+     * Product and service lines are priced together so the invoice discount is shared by both.
+     *
      * @param  list<array<string, mixed>>  $lines
+     * @param  list<array{description: string, amount: string}>  $services
      * @return array<string, mixed>
      *
      * @throws ValidationException
      */
-    private function totals(array $lines, string $discount): array
+    private function totals(array $lines, array $services, string $discount): array
     {
         foreach ($lines as $index => $line) {
             if (Money::cmp($line['discount'], Money::mul($line['unit_price'], $line['quantity'])) > 0) {
@@ -197,11 +234,23 @@ class CreateSale
             }
         }
 
+        $serviceLines = array_map(fn (array $service) => ['quantity' => 1, 'unit_price' => $service['amount']], $services);
+
         try {
-            return $this->calculator->totals($lines, $discount);
+            $totals = $this->calculator->totals([...$lines, ...$serviceLines], $discount);
         } catch (InvalidArgumentException) {
             throw ValidationException::withMessages(['discount' => 'The invoice discount cannot exceed the discounted subtotal.']);
         }
+
+        $productTotals = array_slice($totals['lines'], 0, count($lines));
+        $serviceTotals = array_slice($totals['lines'], count($lines));
+
+        return [
+            ...$totals,
+            'lines' => $productTotals,
+            'service_lines' => $serviceTotals,
+            'service_total' => Money::add(...array_column($serviceTotals, 'line_total')),
+        ];
     }
 
     private function recordPayment(Sale $sale, ?Party $party, string $amount, PaymentMethod $method): void

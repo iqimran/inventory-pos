@@ -114,7 +114,7 @@ export default function SalesIndex({ sales, filters }: SalesIndexProps) {
                             {sales.data.map((sale) => (
                                 <tr key={sale.id} className="hover:bg-muted/30 border-t">
                                     <td className="px-4 py-3">
-                                        <Link href={route('sales.show', sale.id)} className="font-mono font-medium hover:underline">
+                                        <Link href={route('sales.show', sale.id)} className="font-mono font-medium whitespace-nowrap hover:underline">
                                             {sale.invoice_no}
                                         </Link>
                                         <div className="text-muted-foreground text-xs">

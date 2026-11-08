@@ -126,7 +126,10 @@ export default function ExpensesIndex({ expenses, filteredTotal, types, filters 
                                     className={cn('hover:bg-muted/30 border-t', expense.status === 'VOID' && 'text-muted-foreground')}
                                 >
                                     <td className="px-4 py-3">
-                                        <Link href={route('expenses.show', expense.id)} className="font-mono font-medium hover:underline">
+                                        <Link
+                                            href={route('expenses.show', expense.id)}
+                                            className="font-mono font-medium whitespace-nowrap hover:underline"
+                                        >
                                             {expense.expense_no}
                                         </Link>
                                         {expense.status === 'VOID' && (

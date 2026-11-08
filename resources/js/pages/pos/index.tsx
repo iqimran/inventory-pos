@@ -11,7 +11,7 @@ import { formatMoney, fromCents, toCents } from '@/lib/format';
 import { getJson, HttpError } from '@/lib/http';
 import { cn } from '@/lib/utils';
 import { Head, router, usePage } from '@inertiajs/react';
-import { LoaderCircle, Minus, Plus, ScanBarcode, Trash2 } from 'lucide-react';
+import { LoaderCircle, Minus, Plus, ScanBarcode, Trash2, Wrench } from 'lucide-react';
 import { FormEventHandler, KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 type Mode = 'RETAIL' | 'WHOLESALE';
@@ -22,6 +22,13 @@ interface CartLine {
     unitPrice: string;
     discount: string;
     overridden: boolean;
+}
+
+/** A service / labour charge billed with the products (no stock). */
+interface ServiceLine {
+    key: number;
+    description: string;
+    amount: string;
 }
 
 interface PosProps {
@@ -54,6 +61,7 @@ export default function Pos({ mode: initialMode, methods, canOverridePrice }: Po
     const { errors } = usePage().props as { errors: Record<string, string> };
     const [mode, setMode] = useState<Mode>(initialMode);
     const [cart, setCart] = useState<CartLine[]>([]);
+    const [services, setServices] = useState<ServiceLine[]>([]);
     const [customer, setCustomer] = useState<Customer | null>(null);
     const [discount, setDiscount] = useState('0');
     const [paid, setPaid] = useState('');
@@ -70,7 +78,9 @@ export default function Pos({ mode: initialMode, methods, canOverridePrice }: Po
     const searchAbort = useRef<AbortController | null>(null);
 
     const subtotalCents = useMemo(() => cart.reduce((sum, line) => sum + lineNetCents(line), 0), [cart]);
-    const totalCents = Math.max(subtotalCents - toCents(discount), 0);
+    const serviceCents = services.reduce((sum, line) => sum + Math.max(toCents(line.amount), 0), 0);
+    const totalCents = Math.max(subtotalCents + serviceCents - toCents(discount), 0);
+    const isEmpty = cart.length === 0 && services.length === 0;
     const paidCents = paid === '' ? 0 : toCents(paid);
     const dueCents = Math.max(totalCents - paidCents, 0);
     const changeCents = tendered === '' ? 0 : Math.max(toCents(tendered) - paidCents, 0);
@@ -143,8 +153,14 @@ export default function Pos({ mode: initialMode, methods, canOverridePrice }: Po
         setCart((current) => current.map((line) => (line.overridden ? line : { ...line, unitPrice: listPrice(line.product, next) })));
     };
 
+    const addService = () => setServices((current) => [...current, { key: Date.now(), description: '', amount: '' }]);
+
+    const updateService = (key: number, changes: Partial<ServiceLine>) =>
+        setServices((current) => current.map((line) => (line.key === key ? { ...line, ...changes } : line)));
+
     const reset = () => {
         setCart([]);
+        setServices([]);
         setCustomer(null);
         setDiscount('0');
         setPaid('');
@@ -155,7 +171,7 @@ export default function Pos({ mode: initialMode, methods, canOverridePrice }: Po
     };
 
     const complete = () => {
-        if (cart.length === 0 || submitting) return;
+        if (isEmpty || submitting) return;
 
         setSubmitting(true);
         router.post(
@@ -169,6 +185,7 @@ export default function Pos({ mode: initialMode, methods, canOverridePrice }: Po
                     unit_price: line.overridden ? line.unitPrice : null,
                     discount: line.discount || '0',
                 })),
+                services: services.map((line) => ({ description: line.description, amount: line.amount })),
                 discount: discount || '0',
                 paid_amount: paid === '' ? '0' : paid,
                 payment_method: method,
@@ -383,6 +400,61 @@ export default function Pos({ mode: initialMode, methods, canOverridePrice }: Po
                             </tbody>
                         </table>
                     </div>
+
+                    <div className="rounded-lg border">
+                        <div className="bg-muted/50 flex items-center justify-between px-3 py-2">
+                            <span className="text-sm font-medium">Service charges</span>
+                            <Button type="button" variant="outline" size="sm" onClick={addService}>
+                                <Wrench className="size-4" />
+                                Add service charge
+                            </Button>
+                        </div>
+                        {services.length === 0 ? (
+                            <p className="text-muted-foreground px-3 py-3 text-xs">
+                                Labour or service billed with this sale (e.g. screen protector fitting, software setup). No stock is used.
+                            </p>
+                        ) : (
+                            <ul className="divide-y">
+                                {services.map((line, index) => (
+                                    <li key={line.key} className="grid gap-1 px-3 py-2">
+                                        <div className="flex items-center gap-2">
+                                            <Input
+                                                value={line.description}
+                                                onChange={(e) => updateService(line.key, { description: e.target.value })}
+                                                placeholder="Service description"
+                                                className="h-8 flex-1"
+                                                aria-label="Service description"
+                                                required
+                                            />
+                                            <Input
+                                                type="number"
+                                                min={0.01}
+                                                step="0.01"
+                                                value={line.amount}
+                                                onChange={(e) => updateService(line.key, { amount: e.target.value })}
+                                                placeholder="Amount"
+                                                className="h-8 w-32 text-right"
+                                                aria-label="Service amount"
+                                                required
+                                            />
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="icon"
+                                                className="size-8"
+                                                onClick={() => setServices(services.filter((l) => l.key !== line.key))}
+                                                aria-label="Remove service charge"
+                                            >
+                                                <Trash2 className="size-4" />
+                                            </Button>
+                                        </div>
+                                        <InputError message={errors[`services.${index}.description`]} />
+                                        <InputError message={errors[`services.${index}.amount`]} />
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </div>
                 </section>
 
                 <aside className="flex flex-col gap-4 rounded-lg border p-4 lg:sticky lg:top-4 lg:self-start">
@@ -399,6 +471,14 @@ export default function Pos({ mode: initialMode, methods, canOverridePrice }: Po
                             </span>
                             <span className="tabular-nums">{formatMoney(fromCents(subtotalCents))}</span>
                         </div>
+                        {services.length > 0 && (
+                            <div className="flex justify-between">
+                                <span>
+                                    Service charges <Badge variant="secondary">{services.length}</Badge>
+                                </span>
+                                <span className="tabular-nums">{formatMoney(fromCents(serviceCents))}</span>
+                            </div>
+                        )}
                         <div className="flex items-center justify-between gap-2">
                             <Label htmlFor="discount">Invoice discount</Label>
                             <Input
@@ -421,7 +501,9 @@ export default function Pos({ mode: initialMode, methods, canOverridePrice }: Po
                     <div className="grid gap-3">
                         <div className="grid grid-cols-2 gap-2">
                             <div className="grid gap-1">
-                                <Label htmlFor="method">Method</Label>
+                                <Label htmlFor="method" required>
+                                    Method
+                                </Label>
                                 <select
                                     id="method"
                                     value={method}
@@ -512,7 +594,7 @@ export default function Pos({ mode: initialMode, methods, canOverridePrice }: Po
                         <Button type="button" variant="outline" onClick={reset} disabled={submitting}>
                             Clear
                         </Button>
-                        <Button type="button" size="lg" onClick={complete} disabled={submitting || cart.length === 0 || (dueCents > 0 && !customer)}>
+                        <Button type="button" size="lg" onClick={complete} disabled={submitting || isEmpty || (dueCents > 0 && !customer)}>
                             {submitting && <LoaderCircle className="size-4 animate-spin" />}
                             Complete sale (F9)
                         </Button>

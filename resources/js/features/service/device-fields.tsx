@@ -30,7 +30,9 @@ interface DeviceFieldsProps {
 export function DeviceFields({ value, onChange, errors, errorPrefix = '', idPrefix = 'device' }: DeviceFieldsProps) {
     const field = (name: keyof DeviceDraft, label: string, props: React.ComponentProps<typeof Input> = {}) => (
         <div className="grid gap-2">
-            <Label htmlFor={`${idPrefix}-${name}`}>{label}</Label>
+            <Label htmlFor={`${idPrefix}-${name}`} required={Boolean(props.required)}>
+                {label}
+            </Label>
             <Input id={`${idPrefix}-${name}`} value={value[name]} onChange={(e) => onChange({ ...value, [name]: e.target.value })} {...props} />
             <InputError message={errors[`${errorPrefix}${name}`]} />
         </div>

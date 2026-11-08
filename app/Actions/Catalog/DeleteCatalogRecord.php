@@ -2,7 +2,10 @@
 
 namespace App\Actions\Catalog;
 
+use App\Domain\Audit\AuditTrail;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -26,6 +29,14 @@ class DeleteCatalogRecord
             }
         }
 
-        $record->delete();
+        DB::transaction(function () use ($record): void {
+            app(AuditTrail::class)->record(
+                Str::snake(class_basename($record)).'.deleted',
+                $record,
+                old: array_diff_key($record->attributesToArray(), array_flip(['created_at', 'updated_at'])),
+                description: (string) ($record->getAttribute('name') ?? $record->getKey()),
+            );
+            $record->delete();
+        });
     }
 }

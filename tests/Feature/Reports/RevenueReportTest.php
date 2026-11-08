@@ -19,11 +19,13 @@ use App\Models\ServiceInvoice;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
+use PHPUnit\Framework\Attributes\Group;
 use Tests\TestCase;
 
 /**
  * T041–T043: PRODUCT, SERVICE and combined revenue — including the critical combined service invoice.
  */
+#[Group('critical')]
 class RevenueReportTest extends TestCase
 {
     use RefreshDatabase;
@@ -184,7 +186,7 @@ class RevenueReportTest extends TestCase
         $this->criticalServiceInvoice();
 
         $technicians = app(RevenueReport::class)->serviceByTechnician(ReportPeriod::make('2026-09-01', '2026-09-30'));
-        $this->assertSame([['technician_id' => null, 'technician' => null, 'invoices' => 1, 'revenue' => '500.00']], $technicians);
+        $this->assertSame([['source' => 'JOB', 'technician_id' => null, 'technician' => null, 'invoices' => 1, 'revenue' => '500.00']], $technicians);
 
         $lines = app(RevenueReport::class)->serviceLineDetails(ReportPeriod::make('2026-09-01', '2026-09-30'));
         $this->assertSame(1, $lines->total()); // SERVICE lines only — the two parts are not listed

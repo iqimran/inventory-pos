@@ -2,6 +2,7 @@
 
 namespace App\Actions\Users;
 
+use App\Domain\Audit\AuditTrail;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -26,8 +27,13 @@ class ChangeUserStatus
                 $user->tokens()->delete();
             }
 
+            $wasActive = (bool) $user->is_active;
             $user->is_active = $active;
             $user->save();
+
+            if ($wasActive !== $active) {
+                app(AuditTrail::class)->record($active ? 'user.activated' : 'user.deactivated', $user, ['is_active' => $wasActive], ['is_active' => $active], $user->email);
+            }
 
             return $user;
         });

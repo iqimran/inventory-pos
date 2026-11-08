@@ -234,14 +234,20 @@ class OrganizationSettingsTest extends TestCase
         $this->assertSame([], Storage::disk('local')->allFiles());
     }
 
-    public function test_printed_documents_receive_the_logo()
+    public function test_printed_documents_do_not_carry_the_logo()
     {
         Storage::fake('local');
         $this->save(['logo' => UploadedFile::fake()->image('logo.png', 64, 64)]);
         $invoice = $this->serviceInvoice();
 
+        // The logo is still used by the application chrome …
         $this->actingAs($this->admin)->get("/service/invoices/{$invoice->id}/print")
-            ->assertInertia(fn (Assert $page) => $page->whereNot('shop.logo_url', null));
+            ->assertInertia(fn (Assert $page) => $page
+                ->whereNot('organization.logo_url', null)
+                // … but never by the printed document header.
+                ->where('shop.name', 'IQ Mobile Care')
+                ->where('shop.phone', '01711-000000, 01811-000000')
+                ->missing('shop.logo_url'));
     }
 
     private function serviceInvoice(): ServiceInvoice

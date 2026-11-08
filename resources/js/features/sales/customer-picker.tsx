@@ -147,7 +147,9 @@ export function CustomerPicker({
                     <DialogDescription>Saved as a customer party so it can be reused for future sales and service.</DialogDescription>
                     <form onSubmit={create} className="space-y-4">
                         <div className="grid gap-2">
-                            <Label htmlFor="customer-name">Name</Label>
+                            <Label htmlFor="customer-name" required>
+                                Name
+                            </Label>
                             <Input
                                 id="customer-name"
                                 value={draft.name}
@@ -158,7 +160,9 @@ export function CustomerPicker({
                             <InputError message={errors.name} />
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="customer-phone">Phone</Label>
+                            <Label htmlFor="customer-phone" required>
+                                Phone
+                            </Label>
                             <Input
                                 id="customer-phone"
                                 inputMode="tel"

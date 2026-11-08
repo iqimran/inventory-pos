@@ -153,15 +153,29 @@ export default function ShowPurchase({
                             <ul className="divide-y text-sm">
                                 {purchase.allocations?.map((allocation) => (
                                     <li key={allocation.id} className="flex justify-between gap-4 px-4 py-2">
-                                        <span>
-                                            <Link href={route('supplier-payments.show', allocation.payment.id)} className="font-mono hover:underline">
-                                                {allocation.payment.payment_no}
-                                            </Link>
-                                            <span className="text-muted-foreground ml-2 text-xs">
-                                                {allocation.payment.purpose_label} · {allocation.payment.method_label} ·{' '}
-                                                {formatDateTime(allocation.payment.paid_at)}
+                                        {allocation.payment ? (
+                                            <span>
+                                                <Link
+                                                    href={route('supplier-payments.show', allocation.payment.id)}
+                                                    className="font-mono whitespace-nowrap hover:underline"
+                                                >
+                                                    {allocation.payment.payment_no}
+                                                </Link>
+                                                <span className="text-muted-foreground ml-2 text-xs">
+                                                    {allocation.payment.purpose_label} · {allocation.payment.method_label} ·{' '}
+                                                    {formatDateTime(allocation.payment.paid_at)}
+                                                </span>
                                             </span>
-                                        </span>
+                                        ) : (
+                                            <span>
+                                                Opening balance advance
+                                                {allocation.created_at && (
+                                                    <span className="text-muted-foreground ml-2 text-xs">
+                                                        {formatDateTime(allocation.created_at)}
+                                                    </span>
+                                                )}
+                                            </span>
+                                        )}
                                         <span className="tabular-nums">{formatMoney(allocation.amount)}</span>
                                     </li>
                                 ))}

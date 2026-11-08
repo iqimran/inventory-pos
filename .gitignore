@@ -23,3 +23,19 @@ Homestead.json
 Homestead.yaml
 npm-debug.log
 yarn-error.log
+
+# Secrets and environment variants (only .env.example is committed)
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+
+# Database dumps and backups: contain customer and financial data
+backups/
+*.sql
+*.sql.gz
+*.dump
+
+# Local Docker overrides
+docker-compose.override.yml

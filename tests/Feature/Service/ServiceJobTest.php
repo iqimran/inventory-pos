@@ -47,7 +47,9 @@ class ServiceJobTest extends TestCase
         $this->assertSame($this->technician->id, $job->technician_id);
         $this->assertSame('Phone does not charge', $job->complaint);
         $this->assertSame('1500.00', $job->estimated_amount);
-        $this->assertSame('0.00', $job->service_charge);
+        // The estimate is billed as a placeholder service line until real parts/charges are added.
+        $this->assertSame('1500.00', $job->service_charge);
+        $this->assertSame([['Estimated service charge', '1500.00', true]], $job->charges->map(fn ($c) => [$c->description, $c->amount, $c->is_estimate])->all());
         $this->assertNull($job->approved_amount);
         $this->assertNotNull($job->received_at);
         $this->assertNotNull($job->promised_at);

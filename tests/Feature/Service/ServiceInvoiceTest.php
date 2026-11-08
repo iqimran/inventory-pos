@@ -17,12 +17,14 @@ use App\Models\StockMovement;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use LogicException;
+use PHPUnit\Framework\Attributes\Group;
 use Tests\Feature\Service\Concerns\BuildsServiceJobs;
 use Tests\TestCase;
 
 /**
  * T030 — combined service invoice: PRODUCT lines (parts, stock out) + SERVICE lines (labour, no stock).
  */
+#[Group('critical')]
 class ServiceInvoiceTest extends TestCase
 {
     use BuildsServiceJobs, RefreshDatabase;
@@ -232,9 +234,9 @@ class ServiceInvoiceTest extends TestCase
 
     public function test_a_job_without_parts_or_charges_cannot_be_invoiced()
     {
-        $this->makeReady($this->job);
+        $job = $this->makeReady($this->openJob(['estimated_amount' => '0']));
 
-        $this->invoice($this->job)->assertSessionHasErrors('job');
+        $this->invoice($job)->assertSessionHasErrors('job');
         $this->assertSame(0, ServiceInvoice::count());
     }
 

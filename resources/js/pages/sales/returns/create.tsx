@@ -136,7 +136,9 @@ export default function CreateSaleReturn({ sale: { data: sale }, methods, custom
                 <div className="grid gap-6 md:grid-cols-2">
                     <div className="space-y-4">
                         <div className="grid gap-2">
-                            <Label htmlFor="reason">Reason</Label>
+                            <Label htmlFor="reason" required>
+                                Reason
+                            </Label>
                             <Input
                                 id="reason"
                                 value={form.data.reason}

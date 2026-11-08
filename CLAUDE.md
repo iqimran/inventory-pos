@@ -72,3 +72,65 @@ A task is complete only when:
 - no obvious N+1 query is introduced,
 - stock/ledger invariants remain valid,
 - task status is updated.
+
+## Git requirements
+
+Use Conventional Commits.
+
+Allowed prefixes:
+- feat
+- fix
+- refactor
+- test
+- docs
+- chore
+- perf
+- style
+
+Commit messages should be concise and describe the completed change.
+
+Example:
+feat: implement product inventory management
+
+Do not create meaningless commits such as:
+- update
+- changes
+- final
+- work
+- test
+
+## Docker requirements
+
+The application must be containerized for easy deployment.
+
+Required:
+- PHP/Laravel application container
+- Nginx container
+- MySQL container
+- Docker Compose
+- .env.example
+- .dockerignore
+- production Docker configuration
+- persistent MySQL volume
+- persistent Laravel storage where required
+
+The Docker setup must support:
+
+Development:
+docker compose up -d
+
+Production:
+docker compose -f docker-compose.prod.yml up -d
+
+The application must document:
+- initial setup
+- environment variables
+- database migration
+- database seeding
+- storage link
+- frontend build
+- queue worker
+- scheduler
+- backups
+- logs
+- restart procedures

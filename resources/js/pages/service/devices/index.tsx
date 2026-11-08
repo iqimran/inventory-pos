@@ -158,7 +158,7 @@ export default function DevicesIndex({ devices, filters }: DevicesIndexProps) {
                     <form onSubmit={submit} className="space-y-4">
                         {editing === 'new' && (
                             <div className="grid gap-2">
-                                <Label>Customer</Label>
+                                <Label required>Customer</Label>
                                 <CustomerPicker
                                     value={owner}
                                     onChange={(customer) => {

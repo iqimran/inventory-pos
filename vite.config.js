@@ -18,4 +18,9 @@ export default defineConfig({
     esbuild: {
         jsx: 'automatic',
     },
+    // Inside the Docker "node" service: listen on all interfaces, and tell the browser (and
+    // Laravel's public/hot file) to reach the dev server via localhost.
+    server: process.env.VITE_DOCKER
+        ? { host: '0.0.0.0', port: 5173, strictPort: true, hmr: { host: 'localhost' }, cors: true }
+        : undefined,
 });

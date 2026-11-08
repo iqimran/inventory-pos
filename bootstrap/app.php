@@ -20,6 +20,13 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->statefulApi();
 
+        // Behind a TLS-terminating reverse proxy (Caddy, host Nginx, a load balancer), trust its
+        // X-Forwarded-* headers so HTTPS, client IPs and redirects are correct. Empty = trust none.
+        $proxies = array_filter(array_map('trim', explode(',', (string) env('TRUSTED_PROXIES', ''))));
+        if ($proxies !== []) {
+            $middleware->trustProxies(at: $proxies === ['*'] ? '*' : $proxies);
+        }
+
         $middleware->web(append: [
             EnsureUserIsActive::class,
             HandleInertiaRequests::class,

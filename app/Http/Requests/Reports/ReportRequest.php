@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests\Reports;
 
+use App\Domain\Reporting\ReportAccess;
 use App\Domain\Reporting\ReportPeriod;
-use App\Enums\Permission;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -17,9 +17,14 @@ class ReportRequest extends FormRequest
     /** Longest range that may be grouped by day. */
     public const MAX_DAILY_DAYS = 366;
 
+    /**
+     * reports.view plus the permission of the module the report exposes (see ReportAccess).
+     */
     public function authorize(): bool
     {
-        return $this->user()->can(Permission::ReportsView->value);
+        $report = str((string) $this->route()?->getName())->after('reports.')->toString();
+
+        return ReportAccess::report($this->user(), $report);
     }
 
     /**

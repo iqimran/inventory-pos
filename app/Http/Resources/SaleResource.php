@@ -29,6 +29,7 @@ class SaleResource extends JsonResource
             'subtotal' => $this->subtotal,
             'items_discount' => $this->items_discount,
             'discount' => $this->discount,
+            'service_total' => $this->service_total,
             'total' => $this->total,
             'paid_amount' => $this->paid_amount,
             'returned_amount' => $this->returned_amount,
@@ -59,6 +60,13 @@ class SaleResource extends JsonResource
                 'returned_quantity' => (int) ($item->getAttributes()['returned_quantity'] ?? 0),
                 'returnable_quantity' => $item->quantity - (int) ($item->getAttributes()['returned_quantity'] ?? 0),
             ], $showCost ? ['unit_cost' => $item->unit_cost] : []))),
+            'service_charges' => $this->whenLoaded('serviceCharges', fn () => $this->serviceCharges->map(fn ($charge) => [
+                'id' => $charge->id,
+                'description' => $charge->description,
+                'amount' => $charge->amount,
+                'discount_share' => $charge->discount_share,
+                'line_total' => $charge->line_total,
+            ])),
             'cost_total' => $this->when($showCost, $this->cost_total),
             'returns' => $this->whenLoaded('returns', fn () => $this->returns->map(fn ($return) => [
                 'id' => $return->id,

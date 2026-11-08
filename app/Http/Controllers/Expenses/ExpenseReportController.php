@@ -3,13 +3,13 @@
 namespace App\Http\Controllers\Expenses;
 
 use App\Domain\Expense\ExpenseReport;
-use App\Enums\Permission;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ExpenseResource;
 use App\Models\Expense;
 use App\Models\ExpenseType;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -17,8 +17,8 @@ class ExpenseReportController extends Controller
 {
     public function index(Request $request, ExpenseReport $report): Response
     {
-        // Expense staff and report viewers (T046).
-        abort_unless($request->user()->can('viewAny', Expense::class) || $request->user()->can(Permission::ReportsView->value), 403);
+        // Expense data needs expenses.view; reports.view alone does not reveal it.
+        Gate::authorize('viewAny', Expense::class);
 
         $filters = $request->validate([
             'from' => ['nullable', 'date'],

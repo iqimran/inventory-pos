@@ -2,6 +2,7 @@
 
 namespace App\Actions\Parties;
 
+use App\Domain\Audit\AuditTrail;
 use App\Domain\PartyLedger\PartyLedgerService;
 use App\Enums\LedgerEntryType;
 use App\Enums\OpeningBalanceType;
@@ -11,7 +12,9 @@ use Illuminate\Support\Facades\DB;
 
 class SaveParty
 {
-    public function __construct(private readonly PartyLedgerService $ledger) {}
+    private const AUDITED = ['name', 'type', 'phone', 'email', 'address', 'is_active'];
+
+    public function __construct(private readonly PartyLedgerService $ledger, private readonly AuditTrail $audit) {}
 
     /**
      * Create a party (posting its opening balance to the ledger) or update its details.
@@ -22,9 +25,13 @@ class SaveParty
     public function handle(?Party $party, array $data): Party
     {
         if ($party) {
-            $party->update(collect($data)->except(['opening_balance', 'opening_balance_type'])->all());
+            return DB::transaction(function () use ($party, $data): Party {
+                $before = $this->audit->snapshot($party, self::AUDITED);
+                $party->update(collect($data)->except(['opening_balance', 'opening_balance_type'])->all());
+                $this->audit->recordChanges('party.updated', $party, $before, $this->audit->snapshot($party, self::AUDITED), $party->name);
 
-            return $party;
+                return $party;
+            });
         }
 
         return DB::transaction(function () use ($data): Party {
@@ -42,6 +49,12 @@ class SaveParty
             } elseif ($type === OpeningBalanceType::Payable) {
                 $this->ledger->credit($party, LedgerEntryType::OpeningBalance, $opening, $party, 'Opening balance');
             }
+
+            $this->audit->record('party.created', $party, new: [
+                ...$this->audit->snapshot($party, self::AUDITED),
+                'opening_balance' => $opening,
+                'opening_balance_type' => $type?->value,
+            ], description: $party->name);
 
             return $party;
         });

@@ -1,6 +1,7 @@
 import { Pagination } from '@/components/pagination';
 import { Input } from '@/components/ui/input';
 import { type SelectOption } from '@/features/purchasing/types';
+import { type Outstanding } from '@/features/reports/outstanding';
 import { ReportFilters } from '@/features/reports/report-filters';
 import { ReportPage, td, tdRight, th, thRight } from '@/features/reports/report-page';
 import { StatCard } from '@/features/reports/stat-card';
@@ -11,7 +12,7 @@ import { Link } from '@inertiajs/react';
 
 interface PartyReportProps {
     filters: { from: string; to: string; group_by: string; type: string; side: string; q: string };
-    outstanding: { receivable: string; receivable_parties: number; payable: string; payable_parties: number };
+    outstanding: Outstanding;
     parties: Paginator<{
         id: number;
         name: string;
@@ -43,7 +44,7 @@ function Balance({ value }: { value: string }) {
 }
 
 /**
- * T045 — outstanding receivables / payables and each party's ledger for the period.
+ * T045 — outstanding balances (customer dues and credit, supplier payables and advances) and each party's ledger for the period.
  */
 export default function PartyReport({ filters, outstanding, parties, types }: PartyReportProps) {
     const range = { from: filters.from, to: filters.to };
@@ -87,16 +88,26 @@ export default function PartyReport({ filters, outstanding, parties, types }: Pa
                 )}
             </ReportFilters>
 
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <StatCard
-                    label="Outstanding receivables (now)"
-                    value={formatMoney(outstanding.receivable)}
-                    sub={`${outstanding.receivable_parties} part(ies) owe the shop`}
+                    label="Customer dues (now)"
+                    value={formatMoney(outstanding.customer_receivable)}
+                    sub={`${outstanding.customer_receivable_parties} customer(s) owe the shop`}
                 />
                 <StatCard
-                    label="Outstanding payables (now)"
-                    value={formatMoney(outstanding.payable)}
-                    sub={`The shop owes ${outstanding.payable_parties} part(ies)`}
+                    label="Supplier payables (now)"
+                    value={formatMoney(outstanding.supplier_payable)}
+                    sub={`The shop owes ${outstanding.supplier_payable_parties} supplier(s)`}
+                />
+                <StatCard
+                    label="Customer credit (now)"
+                    value={formatMoney(outstanding.customer_credit)}
+                    sub={`Store credit / advances held for ${outstanding.customer_credit_parties} customer(s)`}
+                />
+                <StatCard
+                    label="Supplier advances (now)"
+                    value={formatMoney(outstanding.supplier_advance)}
+                    sub={`${outstanding.supplier_advance_parties} supplier(s) hold the shop's money`}
                 />
             </div>
 

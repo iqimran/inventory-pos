@@ -28,25 +28,43 @@ class PartyLedgerReport
     /** Everything else (opening balances, manual adjustments) is shown as "adjustments". */
 
     /**
-     * Current outstanding balances (the cached, reconcilable party balance).
+     * Current outstanding balances (the cached, reconcilable party balance), split by who owes whom:
      *
-     * @return array{receivable: string, receivable_parties: int, payable: string, payable_parties: int}
+     * - customer_receivable: customers (and dual parties) who owe the shop;
+     * - customer_credit: customers the shop owes (store credit / customer advances);
+     * - supplier_payable: suppliers (and dual parties) the shop owes;
+     * - supplier_advance: suppliers holding the shop's money (advances, opening receivables, refunds due).
+     *
+     * A supplier's positive balance is never mixed into customer receivables, nor a customer's store
+     * credit into supplier payables.
+     *
+     * @return array{customer_receivable: string, customer_receivable_parties: int, customer_credit: string, customer_credit_parties: int,
+     *               supplier_payable: string, supplier_payable_parties: int, supplier_advance: string, supplier_advance_parties: int}
      */
     public function outstanding(?string $type = null): array
     {
+        $supplier = "parties.type = '".PartyType::Supplier->value."'";
+        $customer = "parties.type = '".PartyType::Customer->value."'";
+
         $row = $this->parties($type)
-            ->selectRaw('COALESCE(SUM(CASE WHEN balance > 0 THEN balance ELSE 0 END), 0) as receivable,
-                COALESCE(SUM(CASE WHEN balance > 0 THEN 1 ELSE 0 END), 0) as receivable_parties,
-                COALESCE(SUM(CASE WHEN balance < 0 THEN -balance ELSE 0 END), 0) as payable,
-                COALESCE(SUM(CASE WHEN balance < 0 THEN 1 ELSE 0 END), 0) as payable_parties')
+            ->selectRaw("COALESCE(SUM(CASE WHEN balance > 0 AND NOT {$supplier} THEN balance ELSE 0 END), 0) as customer_receivable,
+                COALESCE(SUM(CASE WHEN balance > 0 AND NOT {$supplier} THEN 1 ELSE 0 END), 0) as customer_receivable_parties,
+                COALESCE(SUM(CASE WHEN balance < 0 AND {$customer} THEN -balance ELSE 0 END), 0) as customer_credit,
+                COALESCE(SUM(CASE WHEN balance < 0 AND {$customer} THEN 1 ELSE 0 END), 0) as customer_credit_parties,
+                COALESCE(SUM(CASE WHEN balance < 0 AND NOT {$customer} THEN -balance ELSE 0 END), 0) as supplier_payable,
+                COALESCE(SUM(CASE WHEN balance < 0 AND NOT {$customer} THEN 1 ELSE 0 END), 0) as supplier_payable_parties,
+                COALESCE(SUM(CASE WHEN balance > 0 AND {$supplier} THEN balance ELSE 0 END), 0) as supplier_advance,
+                COALESCE(SUM(CASE WHEN balance > 0 AND {$supplier} THEN 1 ELSE 0 END), 0) as supplier_advance_parties")
             ->first();
 
-        return [
-            'receivable' => Money::of((string) $row->receivable),
-            'receivable_parties' => (int) $row->receivable_parties,
-            'payable' => Money::of((string) $row->payable),
-            'payable_parties' => (int) $row->payable_parties,
-        ];
+        $result = [];
+
+        foreach (['customer_receivable', 'customer_credit', 'supplier_payable', 'supplier_advance'] as $key) {
+            $result[$key] = Money::of((string) $row->{$key});
+            $result["{$key}_parties"] = (int) $row->{"{$key}_parties"};
+        }
+
+        return $result;
     }
 
     /**

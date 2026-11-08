@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Reports;
 
 use App\Domain\Reporting\DashboardSummary;
+use App\Domain\Reporting\ReportAccess;
 use App\Domain\Reporting\ReportPeriod;
-use App\Enums\Permission;
 use App\Http\Controllers\Controller;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
@@ -12,14 +12,20 @@ use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * Dashboard: KPI cards for a date range (users with report access), otherwise a welcome page.
+ * Dashboard: the KPI cards the user is allowed to see (ReportAccess), otherwise a welcome page.
+ * Admin sees the whole shop; everyone else sees only the transactions they recorded.
  */
 class DashboardController extends Controller
 {
     public function __invoke(Request $request, DashboardSummary $summary): Response
     {
-        if (! $request->user()->can(Permission::ReportsView->value)) {
-            return Inertia::render('dashboard', ['summary' => null, 'filters' => null]);
+        $user = $request->user();
+        $visible = ReportAccess::dashboard($user);
+        $scope = ReportAccess::dashboardScope($user);
+
+        // Nothing the user may see: the welcome page.
+        if (! in_array(true, $visible, true)) {
+            return Inertia::render('dashboard', ['summary' => null, 'filters' => null, 'scope' => $scope]);
         }
 
         $filters = $request->validate([
@@ -35,8 +41,9 @@ class DashboardController extends Controller
         $groupBy = CarbonImmutable::parse($from)->diffInDays(CarbonImmutable::parse($to)) > 62 ? 'month' : 'day';
 
         return Inertia::render('dashboard', [
-            'summary' => $summary->build(ReportPeriod::make($from, $to, $groupBy), $request->user()->can(Permission::PurchasesView->value)),
+            'summary' => $summary->build(ReportPeriod::make($from, $to, $groupBy), $visible, $scope === 'own' ? $user->id : null),
             'filters' => ['from' => $from, 'to' => $to, 'group_by' => $groupBy],
+            'scope' => $scope,
         ]);
     }
 }

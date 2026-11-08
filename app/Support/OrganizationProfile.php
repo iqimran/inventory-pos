@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Domain\Audit\AuditTrail;
 use App\Models\Setting;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
@@ -11,8 +12,8 @@ use Illuminate\Support\Str;
 
 /**
  * The organization's branding: name, address, contact number and invoice footer printed at the
- * top of sale and service invoices, plus one logo used for the sidebar, login page, browser tab
- * icon and printed documents.
+ * top of sale and service invoices, plus one logo used for the sidebar, login page and browser tab
+ * icon (not on printed documents).
  *
  * Values saved from Settings → Organization win; until a value is saved, the SHOP_* environment
  * values (config/shop.php) are used, so existing installs keep printing what they printed before.
@@ -51,6 +52,17 @@ class OrganizationProfile
         $details['logo_url'] = $this->logoUrl();
 
         return $details;
+    }
+
+    /**
+     * Header for printed documents (receipts, slips, invoices, vouchers): name, address, contact
+     * number and footer. The logo is deliberately left off printed documents.
+     *
+     * @return array{name: string, address: ?string, phone: ?string, receipt_footer: ?string}
+     */
+    public function documentHeader(): array
+    {
+        return array_diff_key($this->details(), ['logo_url' => true]);
     }
 
     /**
@@ -93,9 +105,10 @@ class OrganizationProfile
     public function update(array $details, ?UploadedFile $logo = null, bool $removeLogo = false): void
     {
         $previousLogo = $this->saved()[self::LOGO_KEY] ?? null;
+        $before = array_intersect_key($this->details(), array_flip(self::FIELDS));
         $newLogo = $logo?->storeAs('branding', 'logo-'.Str::random(16).'.'.$logo->extension(), self::DISK);
 
-        DB::transaction(function () use ($details, $newLogo, $removeLogo): void {
+        DB::transaction(function () use ($details, $newLogo, $removeLogo, $before, $previousLogo): void {
             foreach (self::FIELDS as $key => $field) {
                 Setting::updateOrCreate(['key' => $key], ['value' => $details[$field] ?? null, 'updated_by' => Auth::id()]);
             }
@@ -103,6 +116,17 @@ class OrganizationProfile
             if ($newLogo || $removeLogo) {
                 Setting::updateOrCreate(['key' => self::LOGO_KEY], ['value' => $newLogo ?: null, 'updated_by' => Auth::id()]);
             }
+
+            // Audited in the same transaction as the change.
+            $this->saved = null;
+            $after = array_intersect_key($this->details(), array_flip(self::FIELDS));
+
+            if ($newLogo || ($removeLogo && $previousLogo)) {
+                $before['logo'] = $previousLogo ? 'set' : null;
+                $after['logo'] = $newLogo ? 'replaced' : null;
+            }
+
+            app(AuditTrail::class)->recordChanges('settings.organization_updated', null, $before, $after);
         });
 
         // Replaced or removed files are deleted only after the new settings are committed.

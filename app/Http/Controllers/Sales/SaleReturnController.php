@@ -60,7 +60,7 @@ class SaleReturnController extends Controller
 
         return Inertia::render('sales/returns/show', [
             'saleReturn' => new SaleReturnResource($saleReturn->load(['sale:id,invoice_no', 'party', 'items.product:id,name,sku', 'creator:id,name'])),
-            'shop' => $organization->details(),
+            'shop' => $organization->documentHeader(),
         ]);
     }
 }

@@ -76,5 +76,8 @@ class AppServiceProvider extends ServiceProvider
 
         // Admin has full access to every ability.
         Gate::before(fn (User $user) => $user->isAdmin() ? true : null);
+
+        // Database backups contain every record: Admin only, never grantable as a permission.
+        Gate::define('manage-backups', fn (User $user) => $user->isAdmin());
     }
 }

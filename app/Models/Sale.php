@@ -30,6 +30,7 @@ class Sale extends Model
         'subtotal',
         'items_discount',
         'discount',
+        'service_total',
         'total',
         'paid_amount',
         'returned_amount',
@@ -53,6 +54,7 @@ class Sale extends Model
             'subtotal' => 'decimal:2',
             'items_discount' => 'decimal:2',
             'discount' => 'decimal:2',
+            'service_total' => 'decimal:2',
             'total' => 'decimal:2',
             'paid_amount' => 'decimal:2',
             'returned_amount' => 'decimal:2',
@@ -82,6 +84,16 @@ class Sale extends Model
     public function items(): HasMany
     {
         return $this->hasMany(SaleItem::class);
+    }
+
+    /**
+     * Service / labour charges billed with the products (no stock).
+     *
+     * @return HasMany<SaleServiceCharge, $this>
+     */
+    public function serviceCharges(): HasMany
+    {
+        return $this->hasMany(SaleServiceCharge::class);
     }
 
     /**

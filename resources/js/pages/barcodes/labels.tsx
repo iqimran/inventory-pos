@@ -247,7 +247,9 @@ export default function BarcodeLabels({ layouts, preselected }: LabelsProps) {
 
                     <aside className="space-y-4 rounded-lg border p-4 lg:self-start">
                         <div className="grid gap-2">
-                            <Label htmlFor="layout">Label stock</Label>
+                            <Label htmlFor="layout" required>
+                                Label stock
+                            </Label>
                             <select id="layout" className={selectClass} value={layout} onChange={(e) => setLayout(e.target.value)}>
                                 {layouts.map((option) => (
                                     <option key={option.value} value={option.value}>
@@ -258,7 +260,9 @@ export default function BarcodeLabels({ layouts, preselected }: LabelsProps) {
                             <InputError message={errors.layout} />
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="price">Price on label</Label>
+                            <Label htmlFor="price" required>
+                                Price on label
+                            </Label>
                             <select id="price" className={selectClass} value={price} onChange={(e) => setPrice(e.target.value)}>
                                 <option value="retail">Retail price</option>
                                 <option value="wholesale">Wholesale price</option>

@@ -134,7 +134,7 @@ class SupplierPaymentController extends Controller
 
         return Inertia::render('supplier-payments/print', [
             'payment' => new PaymentResource($payment->load(['party', 'allocations.allocatable', 'creator:id,name'])),
-            'shop' => $organization->details(),
+            'shop' => $organization->documentHeader(),
         ]);
     }
 }

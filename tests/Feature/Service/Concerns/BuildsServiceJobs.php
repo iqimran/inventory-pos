@@ -41,7 +41,8 @@ trait BuildsServiceJobs
             'party_id' => $this->customer->id,
             'device_id' => $this->device->id,
             'complaint' => 'No charging',
-            'estimated_amount' => '1500.00',
+            // No estimate by default: an estimate is billed as its own line (see EstimateChargeTest).
+            'estimated_amount' => '0',
         ], $overrides))->assertSessionHasNoErrors();
 
         return ServiceJob::latest('id')->firstOrFail();

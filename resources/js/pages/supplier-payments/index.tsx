@@ -103,7 +103,10 @@ export default function SupplierPaymentsIndex({ payments, filters, suppliers, pu
                             {payments.data.map((payment) => (
                                 <tr key={payment.id} className="border-t">
                                     <td className="px-4 py-3">
-                                        <Link href={route('supplier-payments.show', payment.id)} className="font-mono font-medium hover:underline">
+                                        <Link
+                                            href={route('supplier-payments.show', payment.id)}
+                                            className="font-mono font-medium whitespace-nowrap hover:underline"
+                                        >
                                             {payment.payment_no}
                                         </Link>
                                         <div className="text-muted-foreground text-xs">

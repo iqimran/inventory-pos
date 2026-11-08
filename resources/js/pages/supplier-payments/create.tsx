@@ -94,7 +94,9 @@ export default function CreateSupplierPayment({ mode, suppliers, methods, suppli
 
                 <form onSubmit={submit} className="space-y-6">
                     <div className="grid gap-2">
-                        <Label htmlFor="party_id">Supplier</Label>
+                        <Label htmlFor="party_id" required>
+                            Supplier
+                        </Label>
                         <select
                             id="party_id"
                             className={selectClass}
@@ -152,7 +154,9 @@ export default function CreateSupplierPayment({ mode, suppliers, methods, suppli
 
                     <div className="grid gap-4 sm:grid-cols-3">
                         <div className="grid gap-2">
-                            <Label htmlFor="amount">Amount</Label>
+                            <Label htmlFor="amount" required>
+                                Amount
+                            </Label>
                             <Input
                                 id="amount"
                                 type="number"
@@ -174,7 +178,9 @@ export default function CreateSupplierPayment({ mode, suppliers, methods, suppli
                             <InputError message={form.errors.amount} />
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="method">Method</Label>
+                            <Label htmlFor="method" required>
+                                Method
+                            </Label>
                             <select
                                 id="method"
                                 className={selectClass}
@@ -190,7 +196,9 @@ export default function CreateSupplierPayment({ mode, suppliers, methods, suppli
                             <InputError message={form.errors.method} />
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="date">Date</Label>
+                            <Label htmlFor="date" required>
+                                Date
+                            </Label>
                             <Input id="date" type="date" value={form.data.date} onChange={(e) => form.setData('date', e.target.value)} />
                             <InputError message={form.errors.date} />
                         </div>

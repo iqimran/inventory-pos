@@ -37,6 +37,8 @@ export interface ServiceJobCharge {
     id: number;
     description: string;
     amount: string;
+    /** The line that bills the job estimate (kept equal to the estimate while the job is open). */
+    is_estimate: boolean;
 }
 
 export interface ServiceJob {

@@ -44,8 +44,8 @@ class PartyLedgerReportTest extends ReportTestCase
                 ->where('parties.data.0.adjustments', '0.00')
                 ->where('parties.data.0.closing', '550.00')
                 // Outstanding is the current balance (includes October's sale).
-                ->where('outstanding.receivable', '650.00')
-                ->where('outstanding.receivable_parties', 1));
+                ->where('outstanding.customer_receivable', '650.00')
+                ->where('outstanding.customer_receivable_parties', 1));
 
         $this->assertSame('650.00', $this->customer->fresh()->balance);
     }
@@ -62,7 +62,12 @@ class PartyLedgerReportTest extends ReportTestCase
 
         $this->get('/reports/parties?from=2026-09-01&to=2026-09-30')
             ->assertInertia(fn (Assert $page) => $page
-                ->where('outstanding', ['receivable' => '200.00', 'receivable_parties' => 1, 'payable' => '1200.00', 'payable_parties' => 1])
+                ->where('outstanding', [
+                    'customer_receivable' => '200.00', 'customer_receivable_parties' => 1,
+                    'customer_credit' => '0.00', 'customer_credit_parties' => 0,
+                    'supplier_payable' => '1200.00', 'supplier_payable_parties' => 1,
+                    'supplier_advance' => '0.00', 'supplier_advance_parties' => 0,
+                ])
                 ->where('parties.total', 2));
 
         $this->get('/reports/parties?from=2026-09-01&to=2026-09-30&side=payable')
@@ -73,8 +78,30 @@ class PartyLedgerReportTest extends ReportTestCase
                 ->where('parties.data.0.closing', '-1200.00'));
 
         $this->get('/reports/parties?type=CUSTOMER&from=2026-09-01&to=2026-09-30')
-            ->assertInertia(fn (Assert $page) => $page->where('parties.total', 1)->where('outstanding.payable', '0.00'));
+            ->assertInertia(fn (Assert $page) => $page->where('parties.total', 1)->where('outstanding.supplier_payable', '0.00'));
         $this->get('/reports/parties?q=0180&from=2026-09-01&to=2026-09-30')
             ->assertInertia(fn (Assert $page) => $page->where('parties.total', 1)->where('parties.data.0.name', 'Gadget Wholesale'));
+    }
+
+    public function test_customer_credit_and_supplier_advance_are_not_mixed_into_dues()
+    {
+        // A customer holding store credit and a supplier the shop has paid in advance.
+        app(SaveParty::class)->handle(null, [
+            'name' => 'Advance customer', 'type' => PartyType::Customer,
+            'opening_balance' => '115.00', 'opening_balance_type' => 'PAYABLE', 'is_active' => true,
+        ]);
+        app(SaveParty::class)->handle(null, [
+            'name' => 'Prepaid supplier', 'type' => PartyType::Supplier,
+            'opening_balance' => '5000.00', 'opening_balance_type' => 'RECEIVABLE', 'is_active' => true,
+        ]);
+        $this->sale([[$this->product('Case', '100.00'), 3]]);
+
+        $this->get('/reports/parties?from=2026-09-01&to=2026-09-30')
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('outstanding.customer_receivable', '300.00')
+                ->where('outstanding.customer_credit', '115.00')
+                ->where('outstanding.supplier_payable', '0.00')
+                ->where('outstanding.supplier_advance', '5000.00')
+                ->where('outstanding.supplier_advance_parties', 1));
     }
 }

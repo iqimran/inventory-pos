@@ -10,10 +10,26 @@ import { FormEventHandler, ReactNode } from 'react';
 
 const selectClass = 'border-input bg-background h-9 w-full rounded-md border px-3 text-sm';
 
-function Field({ id, label, error, children, hint }: { id: string; label: string; error?: string; children: ReactNode; hint?: string }) {
+function Field({
+    id,
+    label,
+    error,
+    children,
+    hint,
+    required,
+}: {
+    id: string;
+    label: string;
+    error?: string;
+    children: ReactNode;
+    hint?: string;
+    required?: boolean;
+}) {
     return (
         <div className="grid gap-2">
-            <Label htmlFor={id}>{label}</Label>
+            <Label htmlFor={id} required={required}>
+                {label}
+            </Label>
             {children}
             {hint && <p className="text-muted-foreground text-xs">{hint}</p>}
             <InputError message={error} />
@@ -54,10 +70,10 @@ export function ProductForm({ product, options }: { product?: Product; options: 
     return (
         <form onSubmit={submit} className="space-y-8">
             <section className="grid gap-6 md:grid-cols-2">
-                <Field id="name" label="Product name" error={errors.name}>
+                <Field required id="name" label="Product name" error={errors.name}>
                     <Input id="name" value={data.name} onChange={(e) => setData('name', e.target.value)} required />
                 </Field>
-                <Field id="sku" label="SKU" error={errors.sku} hint="Unique stock code. Stored in upper case.">
+                <Field required id="sku" label="SKU" error={errors.sku} hint="Unique stock code. Stored in upper case.">
                     <Input id="sku" value={data.sku} onChange={(e) => setData('sku', e.target.value.toUpperCase())} required autoComplete="off" />
                 </Field>
                 <Field id="barcode" label="Barcode" error={errors.barcode} hint="Optional, must be unique. Scan it into this field.">
@@ -69,7 +85,7 @@ export function ProductForm({ product, options }: { product?: Product; options: 
                         </label>
                     )}
                 </Field>
-                <Field id="unit_id" label="Unit" error={errors.unit_id}>
+                <Field required id="unit_id" label="Unit" error={errors.unit_id}>
                     <select id="unit_id" className={selectClass} value={data.unit_id} onChange={(e) => setData('unit_id', e.target.value)} required>
                         <option value="">Select unit…</option>
                         {options.units.map((unit) => (
@@ -79,7 +95,7 @@ export function ProductForm({ product, options }: { product?: Product; options: 
                         ))}
                     </select>
                 </Field>
-                <Field id="category_id" label="Category" error={errors.category_id}>
+                <Field required id="category_id" label="Category" error={errors.category_id}>
                     <select
                         id="category_id"
                         className={selectClass}
@@ -123,6 +139,7 @@ export function ProductForm({ product, options }: { product?: Product; options: 
                 </Field>
                 <Field
                     id="reorder_level"
+                    required
                     label="Reorder level"
                     error={errors.reorder_level}
                     hint="Flag as low stock at or below this quantity. 0 disables."
@@ -141,7 +158,13 @@ export function ProductForm({ product, options }: { product?: Product; options: 
 
             <section className="grid gap-6 md:grid-cols-3">
                 {(['purchase_price', 'retail_price', 'wholesale_price'] as const).map((field) => (
-                    <Field key={field} id={field} label={field.replace('_', ' ').replace(/^\w/, (c) => c.toUpperCase())} error={errors[field]}>
+                    <Field
+                        key={field}
+                        required
+                        id={field}
+                        label={field.replace('_', ' ').replace(/^\w/, (c) => c.toUpperCase())}
+                        error={errors[field]}
+                    >
                         <Input
                             id={field}
                             type="number"
