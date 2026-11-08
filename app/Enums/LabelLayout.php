@@ -8,6 +8,7 @@ namespace App\Enums;
  */
 enum LabelLayout: string
 {
+    case Roll35x15 = 'ROLL_35X15';
     case Roll38x25 = 'ROLL_38X25';
     case Roll50x30 = 'ROLL_50X30';
     case A4Sheet = 'A4_3X7';
@@ -15,6 +16,7 @@ enum LabelLayout: string
     public function label(): string
     {
         return match ($this) {
+            self::Roll35x15 => 'Label roll 35 × 15 mm',
             self::Roll38x25 => 'Label roll 38 × 25 mm',
             self::Roll50x30 => 'Label roll 50 × 30 mm',
             self::A4Sheet => 'A4 sticker sheet (3 × 7, 63.5 × 38.1 mm)',
@@ -29,6 +31,7 @@ enum LabelLayout: string
     public function geometry(): array
     {
         return match ($this) {
+            self::Roll35x15 => ['page_width' => 35, 'page_height' => 15, 'label_width' => 35, 'label_height' => 15, 'columns' => 1, 'rows' => 1, 'margin_top' => 0, 'margin_left' => 0, 'gap_x' => 0, 'gap_y' => 0],
             self::Roll38x25 => ['page_width' => 38, 'page_height' => 25, 'label_width' => 38, 'label_height' => 25, 'columns' => 1, 'rows' => 1, 'margin_top' => 0, 'margin_left' => 0, 'gap_x' => 0, 'gap_y' => 0],
             self::Roll50x30 => ['page_width' => 50, 'page_height' => 30, 'label_width' => 50, 'label_height' => 30, 'columns' => 1, 'rows' => 1, 'margin_top' => 0, 'margin_left' => 0, 'gap_x' => 0, 'gap_y' => 0],
             self::A4Sheet => ['page_width' => 210, 'page_height' => 297, 'label_width' => 63.5, 'label_height' => 38.1, 'columns' => 3, 'rows' => 7, 'margin_top' => 15.15, 'margin_left' => 7.25, 'gap_x' => 2.5, 'gap_y' => 0],
